@@ -1,6 +1,20 @@
 # Computer Vision – Weeks 2 & 3 (start here)
 
-Beginner-friendly study kit for **CV-Week3-KeyConcepts.pdf** and the **Week 2 & 3 question bank**: the deep-learning half of the course. All code is in **Jupyter notebooks** that have already been run, so every output, plot and number is visible before you run anything.
+Beginner-friendly study kit for **CV-Week3-KeyConcepts.pdf** and the **Week 2 & 3 question bank**: the deep-learning half of the course.
+
+- **`notes/`**: plain-language explanations with diagrams, one chapter per topic. **Read these first.**
+- **`notebooks/`**: all the code, as **Jupyter notebooks** that have already been run, so every output, plot and number is visible before you run anything.
+
+| Notes chapter | Pairs with notebook |
+|---|---|
+| `00_deep_learning_basics`: neurons, training loop, PyTorch in 5 minutes | 01 |
+| `01_building_blocks`: FC vs conv, ReLU, dropout, pooling, vanishing gradient | 01 |
+| `02_classic_cnns_lenet_alexnet_vgg` | 02 |
+| `03_modern_cnns_resnet_efficientnet` | 03 |
+| `04_object_detection_rcnn_yolo_ssd` | 04 |
+| `05_segmentation_fcn_unet_mask_rcnn` | 05 |
+| `06_video_rnn_lstm` | 06 |
+| `07_attention_and_vision_transformers` | 07 |
 
 | Notebook | Topic | In one line |
 |---|---|---|
@@ -29,8 +43,10 @@ The results are discussed **honestly**. Where a classic method wins on our small
 ```
 week-2-3/
 ├── README.md                     ← you are here
-├── Week2-3_Study_Guide.pdf       ← all 7 notebooks (text + outputs + plots) as one printable PDF
+├── Week2-3_Study_Guide.pdf       ← notes + all 7 notebooks (text + outputs + plots) + answers, one printable PDF
 ├── cheat-sheet.md                ← revision sheet for the night before the eval
+├── notes/                        ← 00 … 07 plain-language notes with diagrams (start here)
+├── images/                       ← diagrams and result plots used by the notes
 ├── notebooks/                    ← 01 … 07 (read the text, run the cells, change the numbers)
 ├── practice/
 │   ├── question_bank_answers.md  ← model answers to all 60 questions in the course's question bank
@@ -49,12 +65,12 @@ Or upload a notebook to **Google Colab** (everything is pre-installed). No GPU i
 ## Study plan
 | Step | Do this | Time |
 |---|---|---|
-| 1 | Notebook 01: the building blocks everything else uses | 45 min |
-| 2 | Notebooks 02 → 03: the CNN timeline (LeNet → AlexNet → VGG → ResNet → EfficientNet) | 1.5 h |
-| 3 | Notebook 04: detection | 1 h |
-| 4 | Notebook 05: segmentation + Mask R-CNN | 1 h |
-| 5 | Notebook 06: video, RNN and LSTM | 45 min |
-| 6 | Notebook 07: attention and Vision Transformers | 45 min |
+| 1 | Notes 00 + 01, then notebook 01: the building blocks everything else uses | 1.5 h |
+| 2 | Notes 02 + 03, then notebooks 02 → 03: the CNN timeline (LeNet → AlexNet → VGG → ResNet → EfficientNet) | 2 h |
+| 3 | Note 04, then notebook 04: detection | 1.25 h |
+| 4 | Note 05, then notebook 05: segmentation + Mask R-CNN | 1.25 h |
+| 5 | Note 06, then notebook 06: video, RNN and LSTM | 1 h |
+| 6 | Note 07, then notebook 07: attention and Vision Transformers | 1 h |
 | 7 | `practice/practice_exercises.ipynb` | 45 min |
 | 8 | `practice/question_bank_answers.md`: answer out loud first, then check | 1.5 h |
 | 9 | `cheat-sheet.md` the night before | 20 min |
