@@ -90,6 +90,17 @@ for (x, y, w, h) in faces:                            # each face = top-left cor
 | Typical use | quick frontal-face detection on weak hardware | pedestrians, faces in harder conditions |
 | One-liner | **fast, lightweight** | **robust, heavier** |
 
+**What the Day 13 lab measured** (85 hand-checked faces in 9 photos):
+- **Course Haar settings (1.3, 5):** found 68.
+- **Haar with scaleFactor 1.1:** found 81, with 6 false alarms.
+- **dlib's HOG face detector:** found 79, with **0** false alarms.
+- **Rotation:** at 30° Haar found **4 of 83** faces and HOG **72 of 83** (dlib's detector includes filters trained on slightly tilted faces).
+- **Speed:** HOG was **not** slower than Haar at similar accuracy (about 2 s vs 3–5 s on one core), against the textbook claim. Haar is only clearly faster with coarse settings like the course's 1.3.
+
+For the viva, give the course's answer (Haar = fast, HOG = robust), and mention the measurement if asked to discuss.
+
+> **OpenCV 5 note:** in OpenCV 5.0, `cv2.CascadeClassifier` and `HOGDescriptor` moved out of the main package. With OpenCV 4.x (the usual `pip install opencv-python`) the course code works as written. On 5.x, install `opencv-contrib-python`. The lab notebook explains this and downloads the cascade `.xml` file if it's missing.
+
 Both are "classical". Modern systems use CNN detectors (e.g. YuNet, RetinaFace, YOLO-face), which handle pose, lighting and occlusion far better (Week 3 detection chapter).
 
 ---
