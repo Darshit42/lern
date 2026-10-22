@@ -46,6 +46,54 @@ def make_practice_image(width=600, height=400):
     return img
 
 
+def make_shapes_image(width=700, height=450):
+    """White page with black geometric shapes - the kind of 'sample.png' Day 6 needs."""
+    img = np.full((height, width), 255, dtype=np.uint8)
+    cv2.rectangle(img, (40, 40), (180, 150), 0, -1)                                    # rectangle
+    cv2.rectangle(img, (230, 40), (330, 140), 0, -1)                                   # square
+    cv2.fillPoly(img, [np.array([[440, 40], [520, 160], [360, 160]], np.int32)], 0)    # triangle
+    cv2.circle(img, (610, 100), 60, 0, -1)                                             # circle
+    pent = [(100 + 65 * np.cos(np.radians(a)), 320 + 65 * np.sin(np.radians(a))) for a in range(-90, 270, 72)]
+    cv2.fillPoly(img, [np.array(pent, np.int32)], 0)                                   # pentagon
+    hexa = [(260 + 65 * np.cos(np.radians(a)), 320 + 65 * np.sin(np.radians(a))) for a in range(0, 360, 60)]
+    cv2.fillPoly(img, [np.array(hexa, np.int32)], 0)                                   # hexagon
+    star = []
+    for i in range(10):
+        r = 70 if i % 2 == 0 else 28
+        a = np.radians(-90 + i * 36)
+        star.append((440 + r * np.cos(a), 320 + r * np.sin(a)))
+    cv2.fillPoly(img, [np.array(star, np.int32)], 0)                                   # star (not convex!)
+    cv2.ellipse(img, (610, 320), (60, 35), 30, 0, 360, 0, -1)                          # ellipse
+    return img
+
+
+def make_document_image(width=600, height=400, shadow=True, noise=True, seed=0):
+    """
+    Grayscale 'photo of a printed page': dark text on light paper.
+    shadow=True adds uneven lighting (dark on one side) - the case where ONE global
+    threshold fails and adaptive thresholding shines (Day 4).
+    noise=True sprinkles specks and small holes - the case morphology cleans up (Day 5).
+    """
+    page = np.full((height, width), 235, dtype=np.uint8)
+    lines = ["COMPUTER VISION - WEEK 1", "Histograms show pixel counts.",
+             "Thresholding makes it binary.", "Otsu picks the cut-off itself.",
+             "Opening removes small specks.", "Closing fills small holes."]
+    for i, text in enumerate(lines):
+        cv2.putText(page, text, (25, 55 + i * 58), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.9 if i else 1.0, 40, 3, cv2.LINE_AA)
+    img = page.astype(np.float32)
+    if shadow:
+        gradient = np.linspace(0.35, 1.0, width, dtype=np.float32)   # dark on the left -> bright on the right
+        img *= gradient[None, :]
+    rng = np.random.default_rng(seed)
+    img += rng.normal(0, 6, img.shape)                               # mild sensor noise
+    img = np.clip(img, 0, 255).astype(np.uint8)
+    if noise:
+        ys, xs = rng.integers(0, height, 900), rng.integers(0, width, 900)
+        img[ys, xs] = 30                                             # dark specks ("pepper")
+    return img
+
+
 def load_image(name="sample.jpg", max_side=800):
     """
     Load an image the same way the lectures do: cv2.imread(...).

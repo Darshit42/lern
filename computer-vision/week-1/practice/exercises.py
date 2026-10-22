@@ -16,9 +16,10 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "code"))
-from cv_helpers import make_practice_image
+from cv_helpers import make_practice_image, make_shapes_image, make_document_image
 
 img = make_practice_image()          # 400 x 600 colour image (BGR)
+shapes = make_shapes_image()         # 450 x 700 grayscale: 8 black shapes on white (Day 6)
 ___ = None                           # (placeholder so the file runs before you start)
 
 
@@ -149,6 +150,100 @@ def ex11():
     check(f"Ex11 found 5 shapes (you found {len(big)})", len(big) == 5)
 
 
+# ------------------------------------------------------------------
+# EXERCISE 12 (Day 4): compute the 256-bin histogram of the grayscale image with
+#                      cv2.calcHist (use .ravel() to get a flat list of 256 counts)
+# ------------------------------------------------------------------
+def ex12():
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    hist = ___
+    check("Ex12 histogram has 256 bins", len(hist) == 256)
+    check("Ex12 counts add up to the number of pixels", int(hist.sum()) == gray.size)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 13 (Day 4): binarize the evenly-lit document with OTSU.
+#                      Keep the threshold Otsu picked in T.
+# ------------------------------------------------------------------
+def ex13():
+    doc = make_document_image(shadow=False, noise=False)
+    T, binary = ___
+    check(f"Ex13 Otsu picked a sensible T (got {T})", 60 < T < 220)
+    check("Ex13 result is binary (only 0 and 255)", set(np.unique(binary)) <= {0, 255})
+
+
+# ------------------------------------------------------------------
+# EXERCISE 14 (Day 4): the page has a SHADOW on the left. Blur it (5x5 Gaussian),
+#                      then use ADAPTIVE Gaussian thresholding, blockSize 31, C 15.
+# ------------------------------------------------------------------
+def ex14():
+    doc = make_document_image(shadow=True, noise=False)
+    blurred = ___
+    out = ___
+    check("Ex14 dark (shadowed) empty paper comes out WHITE", out[370:, :120].mean() > 240)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 15 (Day 5): remove the white specks around the square with OPENING (5x5 kernel)
+# ------------------------------------------------------------------
+def ex15():
+    b = np.zeros((100, 100), np.uint8)
+    b[30:70, 30:70] = 255
+    b[5, 5] = b[90, 10] = b[10, 90] = 255                     # three 1-pixel specks
+    kernel = ___
+    opened = ___
+    if opened is None:                                        # (OpenCV crashes on None here, so check first)
+        raise TypeError("opened is still ___")
+    blobs = cv2.connectedComponents(opened)[0] - 1
+    check(f"Ex15 only the square is left (blobs = {blobs})", blobs == 1)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 16 (Day 5): fill the black hole inside the square with CLOSING (5x5 kernel)
+# ------------------------------------------------------------------
+def ex16():
+    b = np.zeros((100, 100), np.uint8)
+    b[30:70, 30:70] = 255
+    b[49:51, 49:51] = 0                                       # a 2x2 hole
+    closed = ___
+    check("Ex16 hole is filled", closed[49, 49] == 255 and closed[50, 50] == 255)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 17 (Day 6): find the 8 shapes. Threshold so the black shapes become WHITE
+#                      (127, inverse!), then findContours with RETR_EXTERNAL + CHAIN_APPROX_SIMPLE
+# ------------------------------------------------------------------
+def ex17():
+    _, thresh = ___
+    contours, _ = ___
+    check(f"Ex17 found 8 contours (you found {len(contours)})", len(contours) == 8)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 18 (Day 6): compute SOLIDITY = contour area / convex hull area for every
+#                      shape. The star is the only one far below 1.
+# ------------------------------------------------------------------
+def ex18():
+    _, thresh = cv2.threshold(shapes, 127, 255, cv2.THRESH_BINARY_INV)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    solidities = [___ for c in contours]
+    check("Ex18 exactly one shape has solidity < 0.8 (the star)", sum(s < 0.8 for s in solidities) == 1)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 19 (Day 6): centroid with moments. The square below is centred at (60, 40).
+# ------------------------------------------------------------------
+def ex19():
+    b = np.zeros((100, 120), np.uint8)
+    b[30:51, 50:71] = 255                                     # rows 30-50, cols 50-70
+    cnt = cv2.findContours(b, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0][0]
+    M = cv2.moments(cnt)
+    cx = ___
+    cy = ___
+    check(f"Ex19 centroid is (60, 40) (you got ({cx}, {cy}))", round(cx) == 60 and round(cy) == 40)
+
+
 if __name__ == "__main__":
-    for i, fn in enumerate([ex1, ex2, ex3, ex4, ex5, ex6, ex7, ex8, ex9, ex10, ex11], start=1):
+    for i, fn in enumerate([ex1, ex2, ex3, ex4, ex5, ex6, ex7, ex8, ex9, ex10, ex11,
+                                  ex12, ex13, ex14, ex15, ex16, ex17, ex18, ex19], start=1):
         attempt(f"Ex{i}", fn)

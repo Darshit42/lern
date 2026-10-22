@@ -216,3 +216,148 @@ edges = cv2.Canny(img, 100, 200)
 plt.imshow(cv2.cvtColor(edges, cv2.COLOR_BGR2RGB))
 ```
 <details><summary>Answer</summary>Canny returns a single-channel image, so a BGR→RGB conversion makes no sense: there are no colour channels to swap. In OpenCV 4.x it raises an "Invalid number of channels" error; newer versions quietly copy the grey into 3 channels, which is pointless. Use <code>plt.imshow(edges, cmap='gray')</code>.</details>
+
+---
+
+## Part F · Day 4: Histograms & Thresholding
+
+**F1.** What does an image histogram show, and what is on each axis?
+<details><summary>Answer</summary>The distribution of pixel intensities: how many pixels have each brightness. x-axis = intensity (0–255), y-axis = number of pixels (frequency).</details>
+
+**F2.** A histogram has almost all its pixels between 200 and 255. Describe the image. What if they're all between 100 and 140?
+<details><summary>Answer</summary>200–255: very bright / overexposed. 100–140: low contrast (flat, greyish). Histogram equalization would stretch it out.</details>
+
+**F3.** Explain each argument of `cv2.calcHist([img], [0], None, [256], [0, 256])`.
+<details><summary>Answer</summary>List of images; channel index (0, the only channel of a grayscale image); mask (None = the whole image); number of bins (256); value range [0, 256) (the end is excluded).</details>
+
+**F4.** Global vs adaptive thresholding: what's the difference, and when should you use adaptive?
+<details><summary>Answer</summary>Global uses one threshold for the whole image. Adaptive computes a separate threshold for each small neighbourhood (its mean or Gaussian-weighted mean minus C). Use adaptive when the illumination varies, e.g. shadows across a page.</details>
+
+**F5.** What does Otsu's method do, and what does it minimise? When does it work best?
+<details><summary>Answer</summary>It automatically picks the optimal global threshold by minimising intra-class (within-group) variance, i.e. making the dark and bright groups as uniform as possible. It works best when the histogram is bimodal (two humps: object and background).</details>
+
+**F6.** In `cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)`, why is the threshold 0? What is the first return value?
+<details><summary>Answer</summary>With THRESH_OTSU the given threshold is ignored, because Otsu computes it. The first return value is the threshold Otsu chose.</details>
+
+**F7.** What are `blockSize` and `C` in `cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)`? Mean vs Gaussian method?
+<details><summary>Answer</summary>blockSize = 11 is the neighbourhood size (it must be odd and greater than 1). C = 2 is subtracted from the local mean to give the threshold. MEAN_C uses the plain average of the block; GAUSSIAN_C uses a Gaussian-weighted average (nearer pixels count more).</details>
+
+**F8.** Give 3 applications of thresholding.
+<details><summary>Answer</summary>Document scanning / binarization, medical imaging (tumour segmentation), industrial inspection (defect detection), object detection (separating foreground from background).</details>
+
+**F9.** Predict: `a = np.array([[50, 127, 128, 200]], np.uint8)`. What is `cv2.threshold(a, 127, 255, cv2.THRESH_BINARY)[1]`? And with `THRESH_TRUNC`?
+<details><summary>Answer</summary>BINARY: <code>[[0, 0, 255, 255]]</code>. 127 is <i>not</i> greater than 127, so it becomes 0. TRUNC: <code>[[50, 127, 127, 127]]</code>: values above 127 are capped at 127.</details>
+
+**F10.** Predict: an image that is 100 everywhere goes through `adaptiveThreshold(..., MEAN_C, THRESH_BINARY, 11, 2)`. What comes out?
+<details><summary>Answer</summary>All white (255). Each pixel (100) is greater than its local mean minus C (100 − 2 = 98). This is why flat, noisy regions come out speckled: tiny noise decides the result.</details>
+
+**F11.** Predict the histogram (4 bins over 0–256) of `[[0,0,64,64],[0,128,128,64],[255,255,128,64],[255,255,255,128]]`.
+<details><summary>Answer</summary>Bins [0–63], [64–127], [128–191], [192–255] → <code>[3, 4, 4, 5]</code> (total 16 pixels).</details>
+
+---
+
+## Part G · Day 5: Morphological operations
+
+**G1.** Define dilation and erosion. What does each do to white regions?
+<details><summary>Answer</summary>Dilation: a pixel becomes white if ANY pixel under the structuring element is white (local max), so white regions expand. Erosion: a pixel stays white only if ALL pixels under the element are white (local min), so white regions shrink.</details>
+
+**G2.** Define opening and closing (the order of operations), and what each is used for.
+<details><summary>Answer</summary>Opening = erosion followed by dilation: it removes small white noise while keeping the shape of large objects. Closing = dilation followed by erosion: it fills small holes and gaps inside objects.</details>
+
+**G3.** What is a structuring element? Name 3 shapes and say what its size controls.
+<details><summary>Answer</summary>A small binary matrix used to probe the image. Shapes: rectangle, ellipse, cross (<code>cv2.getStructuringElement</code>). The size controls how strong the effect is: a bigger element removes bigger specks but also damages more detail.</details>
+
+**G4.** A binary scan has white text with small black holes inside the letters. Which operation fixes it?
+<details><summary>Answer</summary>Closing.</details>
+
+**G5.** A binary image has white objects plus scattered white specks of noise. Which operation fixes it?
+<details><summary>Answer</summary>Opening.</details>
+
+**G6.** Predict: a 5×5 black image with one white pixel in the centre. How many white pixels after a 3×3 dilation? After a 3×3 erosion?
+<details><summary>Answer</summary>Dilation: 9 (a 3×3 white square). Erosion: 0 (the single pixel doesn't have all of its neighbours white).</details>
+
+**G7.** You have black text on white paper and dilate it. Do the letters get thicker or thinner? Why?
+<details><summary>Answer</summary>Thinner! Dilation grows WHITE regions, and here the white is the paper. Invert first (THRESH_BINARY_INV or bitwise_not) so the text is white.</details>
+
+**G8.** Why did the lecture's dilated and eroded photos barely change?
+<details><summary>Answer</summary>They were grayscale photos. On grayscale, dilation and erosion are a local max and min, which just slightly brighten or darken and blur the image. The effect is clearest on binary images with small details.</details>
+
+**G9.** What do `iterations=3` and `MORPH_GRADIENT` do?
+<details><summary>Answer</summary>iterations=3 repeats the operation 3 times (a stronger effect). MORPH_GRADIENT = dilation − erosion, which gives the outline of the shapes.</details>
+
+**G10.** Name 3 applications of morphology.
+<details><summary>Answer</summary>Document cleaning (remove noise, fill gaps), medical imaging (highlight cells and structures), industrial inspection (defects), and cleaning shapes before contour analysis.</details>
+
+---
+
+## Part H · Day 6: Contours & shape analysis
+
+**H1.** What is a contour? Name 4 contour descriptors.
+<details><summary>Answer</summary>A curve joining continuous points along the boundary of a shape with the same intensity. Descriptors: area, perimeter, centroid, bounding box, convex hull (also aspect ratio, solidity, circularity).</details>
+
+**H2.** Bounding box vs convex hull: definition and use of each.
+<details><summary>Answer</summary>Bounding box: the smallest (upright) rectangle enclosing the contour, used for object localization. Convex hull: the smallest convex polygon enclosing the contour (a rubber band around it), used for shape simplification and finding dents (convexity defects).</details>
+
+**H3.** How does the lecture classify shapes? What is the 0.02 in `approxPolyDP`?
+<details><summary>Answer</summary>Approximate the contour to a polygon with <code>cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt, True), True)</code> and count the vertices: 3 = triangle, 4 = rectangle, more than 6 = circle, otherwise polygon. 0.02 sets epsilon to 2% of the perimeter, the maximum distance the simplified outline may stray from the real one. A bigger epsilon gives fewer corners.</details>
+
+**H4.** Dark shapes on white paper: `threshold(img, 127, 255, THRESH_BINARY)` then `findContours(..., RETR_EXTERNAL, ...)` returns 1 contour. Why? How do you fix it?
+<details><summary>Answer</summary>findContours looks for WHITE objects. THRESH_BINARY makes the paper white and the shapes black, so the only external contour is the page. Use THRESH_BINARY_INV (optionally with Otsu).</details>
+
+**H5.** `RETR_EXTERNAL` vs `RETR_TREE`? `CHAIN_APPROX_SIMPLE` vs `CHAIN_APPROX_NONE`?
+<details><summary>Answer</summary>EXTERNAL: outermost contours only. TREE: all contours plus the full parent/child hierarchy. SIMPLE: stores only the end points of straight segments. NONE: stores every boundary point.</details>
+
+**H6.** How do you compute a contour's centroid?
+<details><summary>Answer</summary><code>M = cv2.moments(cnt)</code>; <code>cx = M['m10']/M['m00']</code>, <code>cy = M['m01']/M['m00']</code> (m00 is the area; check it isn't 0).</details>
+
+**H7.** The lecture's rule labels a 5-pointed star as "Circle". Why? How could you detect a star instead?
+<details><summary>Answer</summary>The star approximates to 10 vertices, and more than 6 counts as "Circle". Use solidity = area / convex hull area: a star is about 0.5, while convex shapes are about 1.</details>
+
+**H8.** Predict: a white filled rectangle drawn with `cv2.rectangle(img, (10, 20), (50, 40), 255, -1)` on black. What does `cv2.boundingRect` return for its contour? How many points does `CHAIN_APPROX_SIMPLE` store?
+<details><summary>Answer</summary><code>(10, 20, 41, 21)</code>. The drawn rectangle includes both corner pixels, so the width is 50 − 10 + 1 = 41 and the height 21. 4 points (one per corner).</details>
+
+**H9.** Predict: a white ring (a filled circle with a smaller black circle cut out). How many contours with `RETR_EXTERNAL`? With `RETR_TREE`?
+<details><summary>Answer</summary>EXTERNAL: 1 (just the outer edge). TREE: 2 (outer edge + inner hole, with the hole as a child of the outer contour).</details>
+
+**H10.** Why does `drawContours(img, [hull], 0, ...)` put `hull` in square brackets?
+<details><summary>Answer</summary>drawContours expects a LIST of contours. <code>[hull]</code> is a list with one contour, and index 0 draws that one.</details>
+
+---
+
+## Part I · Key concepts (advanced topics)
+
+**I1.** Why are corners better features to track than edges?
+<details><summary>Answer</summary>At a corner the intensity changes in every direction, so it's uniquely localizable and repeatable. Along an edge, sliding the window looks the same, so the position is ambiguous.</details>
+
+**I2.** Name 3 corner detectors and 3 uses of corners.
+<details><summary>Answer</summary>Harris, Shi-Tomasi, FAST. Uses: image matching, tracking, panorama stitching.</details>
+
+**I3.** List the SIFT pipeline. What is it robust to? What is its main limitation?
+<details><summary>Answer</summary>Gaussian scale space → Difference-of-Gaussians extrema → orientation assignment → 128-dimensional descriptor. Robust to scale and rotation; computationally heavy.</details>
+
+**I4.** What is SURF and how does it differ from SIFT?
+<details><summary>Answer</summary>Speeded-Up Robust Features (2006): a faster alternative to SIFT, also scale- and rotation-invariant. It detects interest points with a Hessian-matrix-based measure and describes them with 64- or 128-dimensional vectors.</details>
+
+**I5.** Describe the HOG pipeline and its classic application.
+<details><summary>Answer</summary>Compute gradients → divide into cells (e.g. 8×8) → build an orientation histogram per cell → normalize over blocks. Classic use: pedestrian detection. Lightweight and interpretable, but sensitive to scale.</details>
+
+**I6.** What is stereo vision? What is its main challenge?
+<details><summary>Answer</summary>Using two images from slightly different viewpoints to estimate depth by matching corresponding points (closer objects have bigger disparity). The challenge is reliable matching in texture-less regions.</details>
+
+**I7.** What does epipolar geometry say? Essential vs Fundamental matrix?
+<details><summary>Answer</summary>A point's match in the other image must lie on the epipolar line, which reduces the search to 1-D. Essential matrix: calibrated cameras. Fundamental matrix: uncalibrated cameras.</details>
+
+**I8.** What is optical flow? What does it assume? Compare Lucas–Kanade and Horn–Schunck.
+<details><summary>Answer</summary>It estimates the apparent motion of pixels between consecutive frames, assuming brightness constancy. Lucas–Kanade works in a local neighbourhood; Horn–Schunck uses a global smoothness constraint. It's sensitive to lighting changes and occlusions.</details>
+
+**I9.** Describe the two steps of a Kalman filter. When does it work best?
+<details><summary>Answer</summary>Predict (estimate the next state from a motion model) and update (correct it with the measurement). It works best for linear motion with Gaussian noise; the Extended Kalman Filter handles non-linear motion.</details>
+
+**I10.** Name 3 object-tracking approaches with an example of each, and 2 challenges.
+<details><summary>Answer</summary>Detection-based (YOLO / Faster R-CNN per frame + linking), tracking-by-motion (optical flow, correlation filters), hybrid (SORT, DeepSORT). Challenges: occlusion, scale change, multiple objects, cluttered backgrounds.</details>
+
+**I11.** Write the 2-D convolution formula and name its parts.
+<details><summary>Answer</summary>(I∗K)(x, y) = Σₘ Σₙ I(x − m, y − n) · K(m, n). I = image, K = kernel, (x, y) = output pixel, and m, n run over the kernel.</details>
+
+**I12.** Which kernel highlights vertical edges: Sobel X or Sobel Y? Write it.
+<details><summary>Answer</summary>Sobel X: <code>[[-1,0,1],[-2,0,2],[-1,0,1]]</code>. It responds to left-to-right changes, which form vertical edges.</details>

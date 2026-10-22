@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle, FancyArrowPatch
-from cv_helpers import make_practice_image
+from cv_helpers import make_practice_image, make_shapes_image
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "images")
 os.makedirs(OUT, exist_ok=True)
@@ -239,6 +239,127 @@ def diagram_transforms():
     save(fig, "07_transformations_overview.png")
 
 
+# ---------------------------------------------------------------- 8. histogram from a tiny image
+def diagram_histogram():
+    tiny = np.array([[0, 0, 64, 64],
+                     [0, 128, 128, 64],
+                     [255, 255, 128, 64],
+                     [255, 255, 255, 128]])
+    values, counts = np.unique(tiny, return_counts=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), gridspec_kw={"width_ratios": [1, 1.4]})
+    draw_grid(axes[0], tiny, fs=12)
+    axes[0].set_xlim(0, 4); axes[0].set_ylim(4, 0); axes[0].set_aspect("equal"); axes[0].axis("off")
+    axes[0].set_title("4x4 grayscale image (16 pixels)", color=INK)
+    ax = axes[1]
+    ax.bar([str(v) for v in values], counts, color=ACCENT2, width=0.6)
+    for i, c in enumerate(counts):
+        ax.text(i, c + 0.1, str(c), ha="center", color=INK)
+    ax.set_xlabel("pixel value (intensity)", color=MUTED); ax.set_ylabel("how many pixels", color=MUTED)
+    ax.set_ylim(0, max(counts) + 1)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    ax.set_title("Its histogram: just COUNT each value (counts add up to 16)", color=INK)
+    save(fig, "08_histogram_explained.png")
+
+
+# ---------------------------------------------------------------- 9. Otsu
+def diagram_otsu():
+    rng = np.random.default_rng(2)
+    pixels = np.concatenate([rng.normal(60, 15, 6000), rng.normal(180, 20, 4000)]).clip(0, 255).astype(np.uint8)
+    hist = np.bincount(pixels, minlength=256).astype(float)
+    p = hist / hist.sum()
+    within = np.full(256, np.nan)
+    for t in range(1, 255):
+        w0, w1 = p[:t].sum(), p[t:].sum()
+        if w0 == 0 or w1 == 0:
+            continue
+        m0 = (np.arange(t) * p[:t]).sum() / w0
+        m1 = (np.arange(t, 256) * p[t:]).sum() / w1
+        v0 = (((np.arange(t) - m0) ** 2) * p[:t]).sum() / w0
+        v1 = (((np.arange(t, 256) - m1) ** 2) * p[t:]).sum() / w1
+        within[t] = w0 * v0 + w1 * v1
+    best = int(np.nanargmin(within))
+    T_cv, _ = cv2.threshold(pixels.reshape(1, -1), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    fig, axes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+    axes[0].bar(range(256), hist, color=MUTED, width=1)
+    axes[0].axvline(best, color=ACCENT, lw=2)
+    axes[0].text(best + 3, hist.max() * 0.9, f"Otsu threshold = {best}\n(cv2 says {T_cv:.0f})", color=ACCENT)
+    axes[0].text(60, hist.max() * 0.15, "dark group\n(background)", ha="center", color="white", fontsize=9)
+    axes[0].text(180, hist.max() * 0.15, "bright group\n(object)", ha="center", color="white", fontsize=9)
+    axes[0].set_ylabel("pixel count", color=MUTED)
+    axes[0].set_title("A two-hump (bimodal) histogram - the case Otsu loves", color=INK)
+    axes[1].plot(range(256), within, color=ACCENT2, lw=2)
+    axes[1].axvline(best, color=ACCENT, lw=2)
+    axes[1].set_ylabel("within-group\nvariance", color=MUTED)
+    axes[1].set_xlabel("candidate threshold T", color=MUTED)
+    axes[1].set_title("Otsu tries EVERY T and keeps the one where both groups are most uniform (lowest point)",
+                      color=INK, fontsize=10)
+    for ax in axes:
+        for side in ("top", "right"):
+            ax.spines[side].set_visible(False)
+    axes[1].set_xlim(0, 255)
+    save(fig, "09_otsu_explained.png")
+
+
+# ---------------------------------------------------------------- 10. dilation / erosion on a grid
+def diagram_morphology_grid():
+    N = 10
+    img = np.zeros((N, N), np.uint8)
+    img[2:8, 2:8] = 255               # a 6x6 white block
+    img[4, 5] = 0                     # a 1-px hole inside it
+    img[0, 9] = 255                   # a 1-px speck outside it
+    k = np.ones((3, 3), np.uint8)
+    panels = [("Input (1 = white)", img), ("DILATE 3x3: white if ANY\nneighbour is white (max)", cv2.dilate(img, k)),
+              ("ERODE 3x3: white only if ALL\nneighbours are white (min)", cv2.erode(img, k)),
+              ("OPEN = erode, then dilate:\nspeck gone (hole grows)", cv2.morphologyEx(img, cv2.MORPH_OPEN, k)),
+              ("CLOSE = dilate, then erode:\nhole filled (speck stays)", cv2.morphologyEx(img, cv2.MORPH_CLOSE, k))]
+    fig, axes = plt.subplots(1, len(panels), figsize=(18, 4.6))
+    for ax, (title, im) in zip(axes, panels):
+        draw_grid(ax, (im // 255).astype(int), cmap="gray", vmin=0, vmax=1, fs=10)
+        ax.set_xlim(-0.05, N + 0.05); ax.set_ylim(N + 0.05, -0.05); ax.set_aspect("equal"); ax.axis("off")
+        ax.set_title(title, fontsize=10.5, color=INK)
+    axes[0].add_patch(Rectangle((9, 0), 1, 1, fill=False, edgecolor=ACCENT, lw=2.5))
+    axes[0].add_patch(Rectangle((5, 4), 1, 1, fill=False, edgecolor=ACCENT2, lw=2.5))
+    axes[0].text(0, N + 0.9, "red = 1-px speck,  blue = 1-px hole", fontsize=9, color=MUTED)
+    save(fig, "10_morphology_grid.png")
+
+
+# ---------------------------------------------------------------- 11. contour descriptors
+def diagram_contour_features():
+    img = make_shapes_image()
+    crop = img[230:410, 340:540].copy()
+    _, th = cv2.threshold(crop, 127, 255, cv2.THRESH_BINARY_INV)
+    cnt = max(cv2.findContours(th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0], key=cv2.contourArea)
+    vis = cv2.cvtColor((crop // 2 + 120).astype(np.uint8), cv2.COLOR_GRAY2BGR)
+    vis = cv2.resize(vis, None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)
+    c2 = cnt * 2
+    x, y, w, h = cv2.boundingRect(c2)
+    cv2.rectangle(vis, (x, y), (x + w, y + h), (218, 105, 9), 2)                 # blue box
+    cv2.drawContours(vis, [cv2.convexHull(c2)], 0, (47, 36, 209), 2)             # red hull
+    cv2.drawContours(vis, [c2], 0, (55, 127, 26), 3)                             # green contour
+    (cx, cy), r = cv2.minEnclosingCircle(c2)
+    cv2.circle(vis, (int(cx), int(cy)), int(r), (130, 119, 110), 1)
+    M = cv2.moments(c2)
+    mx, my = int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"])
+    cv2.circle(vis, (mx, my), 6, (0, 0, 0), -1)
+
+    area, hull_area = cv2.contourArea(cnt), cv2.contourArea(cv2.convexHull(cnt))
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    ax.imshow(cv2.cvtColor(vis, cv2.COLOR_BGR2RGB)); ax.axis("off")
+    notes = [("#1a7f37", "contour (green): the outline points  -> findContours / drawContours"),
+             (ACCENT2, "bounding box (blue): x, y, w, h        -> boundingRect"),
+             (ACCENT, "convex hull (red): rubber band around it -> convexHull"),
+             (MUTED, "min enclosing circle (grey)            -> minEnclosingCircle"),
+             (INK, "centroid (black dot): centre of mass    -> moments"),
+             (INK, f"area {area:.0f} px, perimeter {cv2.arcLength(cnt, True):.0f} px, "
+                   f"solidity = area / hull area = {area / hull_area:.2f}")]
+    for i, (col, txt) in enumerate(notes):
+        ax.text(vis.shape[1] + 15, 40 + i * 48, txt, color=col, fontsize=10, va="center", family="monospace")
+    ax.set_xlim(0, vis.shape[1] + 560)
+    save(fig, "11_contour_features.png")
+
+
 if __name__ == "__main__":
     diagram_pixels()
     diagram_coordinates()
@@ -247,3 +368,7 @@ if __name__ == "__main__":
     diagram_kernels()
     diagram_canny_thresholds()
     diagram_transforms()
+    diagram_histogram()
+    diagram_otsu()
+    diagram_morphology_grid()
+    diagram_contour_features()
