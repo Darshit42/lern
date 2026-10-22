@@ -1,0 +1,7 @@
+# Datasets, videos and model weights are downloaded automatically when a notebook runs
+data/
+output/
+runs/
+*.pt
+*.pth
+*.onnx
