@@ -48,10 +48,11 @@ week-1/
 │   ├── make_diagrams.py                    (redraws the diagrams in images/)
 │   └── outputs/                            (results of every script; regenerated when you run them)
 ├── practice/
+│   ├── question_bank_answers.md ← model answers to all 45 questions in the course's Week 1 question bank
 │   ├── quiz.md              ← 89 eval-style questions (all days + key concepts) with hidden answers
 │   ├── exercises.py         ← 19 fill-in-the-blank coding tasks that print PASS/FAIL
 │   └── solutions.py         ← answers to exercises.py
-└── course-files/            ← the ORIGINAL course PDFs and Jupyter notebooks (see its README)
+└── course-files/            ← the ORIGINAL course PDFs, Jupyter notebooks and question bank (see its README)
 ```
 
 ---
@@ -93,6 +94,7 @@ week-1/
 | 8 | `notes/key_concepts.md` → `keyconcepts_*` scripts (focus on *what* and *why*) | 1 h |
 | 9 | `practice/exercises.py`: try first, then check `solutions.py` | 1.5 h |
 | 10 | `practice/quiz.md`: answer out loud before opening each answer | 1 h |
+| 10b | `practice/question_bank_answers.md`: the course's **official** Week 1 question bank; answer each one first, then compare | 1 h |
 | 11 | Night before the eval: `cheat-sheet.md` | 20 min |
 
 > Learning tip: after every script, change **one number** and predict what will happen *before* you run it. That habit teaches you more than reading.

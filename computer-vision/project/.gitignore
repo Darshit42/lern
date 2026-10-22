@@ -1,0 +1,12 @@
+# Your own photos/videos of people and vehicles (personal data) - keep them out of git
+data/
+# Databases and generated outputs
+*.db
+report/
+output/
+attendance_logs/
+# Downloaded models and demo images (re-downloaded automatically)
+models/
+*.pt
+demo_data/
+demo_class_data/

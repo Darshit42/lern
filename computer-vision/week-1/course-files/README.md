@@ -9,6 +9,7 @@ The course's own materials, kept next to the study kit so everything for Week 1 
 | `lecture-pdfs/Day_5_Morphological_Operations.pdf` | Day 5 | `notes/day5_morphological_operations.md` |
 | `lecture-pdfs/Day_6_Contours_and_Shape_Analysis.pdf` | Day 6 | `notes/day6_contours_and_shapes.md` |
 | `lecture-pdfs/Key_Concepts.pdf` | Summary of the week + advanced topics | `notes/key_concepts.md` |
+| `question-bank/CV-Week1-Questions.pdf` | The course's Week 1 question bank (45 questions) | `practice/question_bank_answers.md` |
 | `notebooks/CV-Week1-Day1…6.ipynb` | The lab notebooks the PDFs were printed from | `code/day1_*` … `day6_*` |
 | `notebooks/imagerepresentation.ipynb` | A 5×5 matrix shown as an image with its numbers | `code/day1_02_pixels_by_hand.py` |
 | `notebooks/colorimgrepresent.ipynb` | A 3×3 RGB image with its numbers | `code/day1_02_pixels_by_hand.py` |
