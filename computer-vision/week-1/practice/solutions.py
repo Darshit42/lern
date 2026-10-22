@@ -1,0 +1,149 @@
+"""
+WEEK 1 - SOLUTIONS to exercises.py
+===================================
+Try exercises.py yourself first! Run this file to see every check PASS:
+
+    python solutions.py
+"""
+
+import os
+import sys
+import cv2
+import numpy as np
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "code"))
+from cv_helpers import make_practice_image
+
+img = make_practice_image()          # 400 x 600 colour image (BGR)
+
+
+def check(name, condition):
+    print(f"{'PASS' if condition else 'FAIL'}  - {name}")
+
+
+def attempt(name, fn):
+    try:
+        fn()
+    except Exception as e:
+        print(f"TODO  - {name}  ({type(e).__name__}: {e})")
+
+
+# ------------------------------------------------------------------
+# EXERCISE 1 (Day 1): get the height, width and number of channels from img.shape
+# ------------------------------------------------------------------
+def ex1():
+    height, width, channels = img.shape
+    check("Ex1 shape", (height, width, channels) == (400, 600, 3))
+
+
+# ------------------------------------------------------------------
+# EXERCISE 2 (Day 1): read the BGR value of the pixel at row 100, column 100
+#                     (it's inside the red square)
+# ------------------------------------------------------------------
+def ex2():
+    pixel = img[100, 100]                       # [row, col] = [y, x]
+    check("Ex2 pixel is red (BGR = 0, 0, 255)", list(pixel) == [0, 0, 255])
+
+
+# ------------------------------------------------------------------
+# EXERCISE 3 (Day 1): convert img to RGB, and to grayscale
+# ------------------------------------------------------------------
+def ex3():
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    check("Ex3 RGB first pixel of red square is (255,0,0)", list(rgb[100, 100]) == [255, 0, 0])
+    check("Ex3 gray has 2 dimensions", gray.ndim == 2)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 4 (Day 1): make a mask of the GREEN circle using HSV + cv2.inRange
+#                     hint: green hue is roughly 40..80 in OpenCV
+# ------------------------------------------------------------------
+def ex4():
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, (40, 80, 50), (80, 255, 255))
+    check("Ex4 mask is white inside the circle (row 110, col 320)", mask[110, 320] == 255)
+    check("Ex4 mask is black on the red square (row 100, col 100)", mask[100, 100] == 0)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 5 (Day 2): translate img 50 px RIGHT and 30 px UP (same output size)
+# ------------------------------------------------------------------
+def ex5():
+    rows, cols = img.shape[:2]
+    M = np.float32([[1, 0, 50], [0, 1, -30]])     # up = negative y
+    moved = cv2.warpAffine(img, M, (cols, rows))
+    check("Ex5 translated correctly", np.array_equal(moved[100 - 30, 100 + 50], img[100, 100]))
+
+
+# ------------------------------------------------------------------
+# EXERCISE 6 (Day 2): resize img to exactly 300 wide x 100 high
+# ------------------------------------------------------------------
+def ex6():
+    resized = cv2.resize(img, (300, 100))       # size is (WIDTH, HEIGHT)
+    check("Ex6 resized shape is (100, 300, 3)", resized.shape == (100, 300, 3))
+
+
+# ------------------------------------------------------------------
+# EXERCISE 7 (Day 2): rotate img 90 degrees CLOCKWISE about its centre with
+#                     getRotationMatrix2D (keep scale 1, same output size)
+# ------------------------------------------------------------------
+def ex7():
+    rows, cols = img.shape[:2]
+    M = cv2.getRotationMatrix2D((cols / 2, rows / 2), -90, 1)   # negative = clockwise
+    rotated = cv2.warpAffine(img, M, (cols, rows))
+    check("Ex7 angle is clockwise (-90)", np.isclose(M[0, 1], -1.0))
+
+
+# ------------------------------------------------------------------
+# EXERCISE 8 (Day 3): write the hand-made convolution for ONE position:
+#                     multiply window and kernel element-wise and sum it
+# ------------------------------------------------------------------
+def ex8():
+    window = np.array([[10, 10, 200], [10, 10, 200], [10, 10, 200]])
+    kernel = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+    value = np.sum(window * kernel)
+    check("Ex8 convolution value = 760", value == 760)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 9 (Day 3): create a 5x5 AVERAGE kernel with numpy and apply it with filter2D
+# ------------------------------------------------------------------
+def ex9():
+    kernel = np.ones((5, 5)) / 25
+    out = cv2.filter2D(img, -1, kernel)
+    check("Ex9 kernel sums to 1", np.isclose(kernel.sum(), 1))
+    check("Ex9 same as cv2.blur", np.abs(out.astype(int) - cv2.blur(img, (5, 5)).astype(int)).max() <= 1)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 10 (Day 3): Sobel in x on the grayscale image, keeping negatives,
+#                      then convert to a displayable uint8 image
+# ------------------------------------------------------------------
+def ex10():
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    sobel_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+    display = cv2.convertScaleAbs(sobel_x)
+    check("Ex10 sobel is float64", sobel_x.dtype == np.float64)
+    check("Ex10 has negative values", sobel_x.min() < 0)
+    check("Ex10 display is uint8", display.dtype == np.uint8)
+
+
+# ------------------------------------------------------------------
+# EXERCISE 11 (Day 3): count the shapes: blur -> Canny -> findContours (external),
+#                      keep only contours with area > 2000. Expect 5 shapes.
+#                      hint: Canny thresholds 20, 60 (the yellow box is low contrast)
+# ------------------------------------------------------------------
+def ex11():
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(blurred, 20, 60)
+    edges = cv2.dilate(edges, np.ones((3, 3), np.uint8))
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    big = [c for c in contours if cv2.contourArea(c) > 2000]
+    check(f"Ex11 found 5 shapes (you found {len(big)})", len(big) == 5)
+
+
+if __name__ == "__main__":
+    for i, fn in enumerate([ex1, ex2, ex3, ex4, ex5, ex6, ex7, ex8, ex9, ex10, ex11], start=1):
+        attempt(f"Ex{i}", fn)
