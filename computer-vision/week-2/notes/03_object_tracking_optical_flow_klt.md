@@ -70,6 +70,11 @@ good_new = p1[st == 1]                    # st = 1: this point was found again, 
 | works well for **moderate motion and stable lighting** | struggles with **large motion jumps** (use pyramids and a bigger winSize) |
 | | points get lost over time, so it **needs re-initialisation** (re-detect features every N frames) |
 
+> **What the Day 10 lab found with the course code:**
+> - It **never re-detects** features. On a street video, only about 5 of its points per frame were still on moving things. Re-detecting every few frames (an improved tracker) raised that to about 48, and picked the ball up again after it passed behind a pillar.
+> - `qualityLevel=0.3` returned only 56 corners, not the 100 that `maxCorners` allows.
+> - On a synthetic ball, the course settings (with the pyramid) kept 100% of the ball's points up to 12 px/frame and 92% at 16 px/frame. Without the pyramid (`maxLevel=0`) the ball was lost at 12 px/frame. At 24 px/frame every setting failed.
+
 ### Exercise: track a moving ball
 - Run KLT on a ball video. The course's `ball.mp4` wasn't provided, so the lab generates one.
 - **maxCorners:** more points means a sturdier track but more work.

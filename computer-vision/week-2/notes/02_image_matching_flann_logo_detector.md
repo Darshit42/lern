@@ -101,6 +101,11 @@ else:
     print("Not enough matches - logo probably not in the scene")
 ```
 
+> ⚠️ **What the Day 9 lab found:**
+> - `len(good) > 10` alone is a weak "logo found" rule. At ratio 0.8 it wrongly reported the logo in **all 10** scenes that didn't contain it.
+> - Counting **RANSAC inliers** and checking that the box is a sensible shape gave 0 false detections in 20 logo-free tests.
+> - In scenes with the logo pasted at known positions, ORB found it 8 times out of 9 and SIFT 9 out of 9 (SIFT still worked at 0.35× zoom, where ORB failed).
+
 The box is a **tilted quadrilateral**, not a rectangle, because the homography includes perspective: a logo seen at an angle.
 
 **Outcome:** the logo localised in the scene, even when it is rotated, scaled, partly hidden or surrounded by clutter.
