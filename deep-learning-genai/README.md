@@ -18,10 +18,13 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 | Text → Tokens → Vectors (handout) | `09_text_tokens_vectors` | `09_text_tokens_vectors` (real BERT tokenizer) |
 | Loss Landscapes & Optimizers (27-08-2026) | `10_loss_landscapes_and_optimizers` | `10_loss_landscapes_and_optimizers` |
 | Optimizers in Neural Networks (01-09-2026) + SGD with Momentum, and Adagrad (02-09-2026) | `13_optimizers_gd_sgd_momentum_adagrad` | `13_gd_sgd_momentum_adagrad` |
+| RMSprop, Adam and AdamW (03-09-2026) | `14_rmsprop_adam_adamw` | `14_rmsprop_adam_adamw` |
 | GenAI Study Notes: From Text to MiniGPT (Polaris) | `11_transformer_and_minigpt` | `11_transformer_and_minigpt` (train a GPT from scratch in ~12 s) |
 | GenAI: Autoregressive & Encoder-Decoder Models (Polaris) | `12_autoregressive_and_encoder_decoder` | `12_autoregressive_encoder_decoder` (cross-attention made visible) |
+| GenAI: Diffusion Models (Polaris) | `15_diffusion_models` | `15_diffusion_models` (ring lab, CFG, DDIM, a digit generator) |
+| GenAI: Prompt Engineering & Context Design (Polaris) | `16_prompt_engineering_context_design` | `16_prompt_engineering_context_design` (prompt tooling as code; no LLM needed) |
 | Case study: ANN multi-class forest cover type (class Colab) | `case-studies/README.md` | `case-studies/01_forest_cover_multiclass_ann` |
-| Case study: airline passenger satisfaction (binary, data only) | `case-studies/README.md` | `case-studies/02_airline_satisfaction_binary_ann` |
+| Case study: ANN airline passenger satisfaction (class Colab) | `case-studies/README.md` | `case-studies/02_airline_satisfaction_binary_ann` |
 
 *Chapters are numbered by topic order (05 was written first), so read 06 → 08 before 05 if you want to follow the lecture dates.*
 
@@ -52,6 +55,9 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 - **Tokens → vectors:** the handout's BPE merges reproduced exactly; BERT splits "Thiruvananthapuram" into 7 pieces and needs **2× more tokens** for the same sentence in Spanish than in English; with no position information, attention can't tell "dog bites man" from "man bites dog".
 - **Optimizers:** on L = w², η = 1.05 diverges (w 5 → 33.6 in 20 steps); escaping the x² − y² saddle took 73 steps for plain GD, 27 with momentum, 20 with Adam; an exploding RNN went NaN without clipping, learned with norm clipping (MSE 0.048), and barely learned with value clipping (0.227). Schedules made **no** difference on a small easy problem (97.6–97.8%).
 - **GD / SGD / mini-batch:** 1 / 10,000 / 10 iterations per epoch confirmed; SGD read the least data but was slowest in wall-clock time. **Momentum's speed-up grows with ravine steepness** (1.2× at 5:1 → 23× at 1000:1, so the lecture's "2–5×" is a middle value); β = 0.9 / 0.99 amplify steps exactly 10× / 100×; Adagrad gave rare features 9–14× bigger steps but **stalled** at θ = 80.5 of 100 where RMSProp arrived in 137 steps. On a real network, all optimizers tied (96.7–97.3%) at their own best learning rates.
+- **Adam family:** hand-written RMSprop/Adam/AdamW match PyTorch to 1e-16; **without bias correction Adam's first steps are 3–6.6× too big** (not too small); Adam's result is identical whether the loss is scaled ×0.001 or ×1000 (SGD: stalls / NaN); the **same λ = 0.01** collapsed weights under Adam + L2 (norm 8.7, 95.6%) but barely acted in AdamW (21.9, 98.0%); at η = 0.001 Adam/AdamW/RMSprop reached 97% while plain SGD reached 25%.
+- **Diffusion:** the notes' ring lab trains in 6 s and covers all 8 modes; noise-prediction error is largest at the *lowest* noise; 10 DDIM steps ≈ 100 DDPM steps; guidance w = 1 hits the requested cluster 100% of the time, and higher w shrinks diversity below the data's; a 1-minute model draws new handwritten digits (0 copies of the training set).
+- **Prompting:** few-shot cost 102 tokens vs 46 zero-shot; retrieval used 25 tokens instead of 202 by stuffing; compression 139 → 39 tokens; a keyword injection filter missed all 3 paraphrases, while code-level authorization blocked every unsafe tool call.
 - **MiniGPT** (107K parameters) learns the corpus in 12 s; removing the causal mask gives a "perfect" loss (0.003) but garbage text, because it was **cheating**.
 - **Encoder-decoder:** cross-attention on a reversal task forms a clean anti-diagonal; exposure bias measured (90.5% teacher-forced vs 81.9% free-running token accuracy); a decoder-only model solves the same task equally well.
 - **AI → ML → DL → GenAI on digits:**
@@ -67,8 +73,8 @@ deep-learning-genai/
 ├── README.md                      ← you are here
 ├── DL_GenAI_Study_Guide.pdf       ← notes + notebooks (with outputs) + cheat sheet, printable
 ├── cheat-sheet.md                 ← one-page revision
-├── notes/                         ← 01 … 13 plain-language chapters
-├── notebooks/                     ← 01 … 13 runnable experiments
+├── notes/                         ← 01 … 16 plain-language chapters
+├── notebooks/                     ← 01 … 16 runnable experiments
 ├── case-studies/                  ← end-to-end ANN projects on real tables (+ data/)
 ├── images/                        ← diagrams and result plots used by the notes
 └── course-files/                  ← the original lecture handouts (PDF)
@@ -79,7 +85,7 @@ deep-learning-genai/
 pip install numpy matplotlib scikit-learn torch jupyter tokenizers pandas seaborn keras
 jupyter notebook           # then open notebooks/01_...
 ```
-Everything uses small built-in or generated data, or the CSVs in `case-studies/data/`. The only download is BERT's vocabulary file (≈ 230 KB) in notebook 09. Every notebook runs in **about 4 minutes or less on a laptop CPU**; the forest-cover case study takes about 12 minutes. Google Colab works too.
+Everything uses small built-in or generated data, or the CSVs in `case-studies/data/`. The only download is BERT's vocabulary file (≈ 230 KB) in notebooks 09 and 16. Every notebook runs in **about 4 minutes or less on a laptop CPU**; the forest-cover case study takes about 12 minutes. Google Colab works too.
 
 ## Study plan
 | Step | Do this | Time |
@@ -95,7 +101,9 @@ Everything uses small built-in or generated data, or the CSVs in `case-studies/d
 | 9 | Note 09, then notebook 09 (tokens → vectors): do the BPE exercise by hand first | 1.25 h |
 | 10 | Note 10, then notebook 10 (optimizers, schedules, clipping) | 1 h |
 | 10b | Note 13, then notebook 13 (GD/SGD/mini-batch, momentum, Adagrad) | 1 h |
+| 10c | Note 14, then notebook 14 (RMSprop, Adam, AdamW) | 1 h |
 | 11 | Notes 11–12, then notebooks 11–12 (MiniGPT, encoder-decoder) | 3 h |
+| 11b | Notes 15–16, then notebooks 15–16 (diffusion, prompting) | 2.5 h |
 | 12 | Case studies 1–2 (`case-studies/`): run them, then change one thing and compare | 2 h |
 | 13 | Check-yourself questions at the end of every note: answer out loud first | 2 h |
 | 14 | `cheat-sheet.md` the night before | 30 min |

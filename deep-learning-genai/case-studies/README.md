@@ -5,9 +5,9 @@ Two end-to-end projects that put chapters 02–10 to work on real datasets: load
 | # | Notebook | Task | Data | Run time (CPU) |
 |---|---|---|---|---|
 | 1 | `01_forest_cover_multiclass_ann.ipynb` | **7-class**: which tree species covers a 30 m patch? | `data/forest_cover_type.csv` (100,000 × 55) | ~10 min |
-| 2 | `02_airline_satisfaction_binary_ann.ipynb` | **binary**: is a passenger satisfied? | `data/airline_passenger_satisfaction.csv` (103,904 × 25) | ~3–4 min |
+| 2 | `02_airline_satisfaction_binary_ann.ipynb` | **binary**: is a passenger satisfied? | `data/airline_passenger_satisfaction.csv` (103,904 × 25) | ~5 min |
 
-Case study 1 **reproduces the class notebook** (`../course-files/Case_Study_ANN_MultiClass_Forest_CoverType.pdf`) step by step, with the same split, scaler, model and settings, then goes further. Case study 2 applies the same workflow to the airline dataset (no class notebook was provided for it) and adds what a binary problem needs: text encoding, imputation, thresholds.
+Case study 1 **reproduces the class notebook** (`../course-files/Case_Study_ANN_MultiClass_Forest_CoverType.pdf`) step by step, with the same split, scaler, model and settings, then goes further. Case study 2 **reproduces the class airline notebook** (`../course-files/Case_Study_ANN_Airline_Passenger_Satisfaction.pdf`) the same way, and adds what a binary problem needs: text encoding, imputation, thresholds, permutation importance.
 
 ```
 pip install keras torch scikit-learn pandas seaborn matplotlib
@@ -43,13 +43,18 @@ jupyter notebook          # run from this folder so data/... paths work
 |---|---|---|
 | always "not satisfied" (baseline) | 56.67% | n/a |
 | logistic regression (= one sigmoid neuron) | 87.64% | 0.928 |
-| **ANN** (64-32-16, BatchNorm, dropout) | **96.14%** | **0.995** |
-| random forest (200 trees) | 96.16% | 0.994 |
+| **class ANN, 15 epochs (our run)** | **95.85%** | **0.994** |
+| class ANN (class PDF run) | 95.83% | 0.994 |
+| class ANN, up to 40 epochs (best epoch 29) | 96.03% | 0.994 |
+| random forest (200 trees, 5 s) | 96.20% | 0.994 |
 
-- **Cleaning:** drop `Unnamed: 0` and `id` (identifiers), one-hot **Class**, map two-valued text to 0/1, fill the 310 missing arrival delays with the **training** median, scale with training statistics.
-- **Non-linear effects:** wifi rating vs satisfaction is **U-shaped** (99.7% satisfied at rating 0, "not rated"; ~25% at 2–3; 99.1% at 5). Correlation (0.28) misses it, but permutation importance shows wifi is the **most important** feature for the ANN. That's why hidden layers add **+8.5 points** over logistic regression.
-- **Threshold = business choice:** at 0.2, recall 0.988 / precision 0.867; at 0.8, precision 0.996 / recall 0.895.
+- **The reproduction matches the class PDF** (95.85% vs 95.83%; F1 95.11% in both).
+- **Cleaning** (class steps): drop `Unnamed: 0` and `id` (identifiers), one-hot the 4 text columns with `drop_first=True` (23 features), fill the 310 missing arrival delays with the median (here the **training** median, after the split), scale with training statistics.
+- **Non-linear effects:** wifi rating vs satisfaction is **U-shaped** (99.7% satisfied at rating 0, "not rated"; ~25% at 2–3; 99.1% at 5). Correlation (0.28) misses it, but permutation importance shows wifi is the **most important** feature for the ANN. That's why hidden layers add **+8.2 points** over logistic regression.
+- **Best epoch = last epoch (15)** in the class settings means training was cut short; with 40 allowed, early stopping chose epoch 29 (+0.2 points).
+- **Threshold = business choice:** at 0.2, recall 0.982 / precision 0.879; at 0.8, precision 0.994 / recall 0.887.
 - The ANN and the random forest **tie** here.
+- **Note on the class PDF:** its printed log (epoch 1: 0.954 accuracy) and its plot (epoch 1: ≈ 0.887) come from different runs. Our fresh run reproduces the **plot** (0.889), so the log is from a re-run on an already-trained model, which is also why it prints "Dropped non-predictive columns: []".
 
 ## The workflow (applies to any tabular ANN)
 1. **Inspect:** shapes, dtypes, missing values, duplicates, the class balance, identifier columns.
