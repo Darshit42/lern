@@ -138,6 +138,17 @@ Binary descriptors are compared with **Hamming distance** (how many bits differ)
 | Speed | fast | slow | **very fast** |
 | Course summary | finds corners but misses scale/rotation changes | finds **fewer but more reliable** keypoints | finds **many fast** keypoints, good for real time |
 
+> **What the Day 8 lab actually measured** (rotating and rescaling `building.jpg` and `graf1.png` by known amounts):
+> - **SIFT matches** stayed **92–99% correct** at every rotation and 80–98% from 0.5× to 3× zoom.
+> - **ORB** stayed 69–90% correct under rotation but dropped to about 50% at 3× zoom.
+> - **Harris + a raw-patch descriptor** fell to ≤ 3% correct from 30° rotation onwards.
+>
+> Two honest corrections to the slogans:
+> - Harris *detection* is fairly stable under rotation (64–98% of corners reappear). It is the matching without an orientation that fails. Under zoom the detection itself fails too.
+> - With default settings SIFT found **more** keypoints than ORB (4,566 vs 500 on `building.jpg`), simply because `ORB_create()` stops at `nfeatures=500`. "SIFT finds fewer" is only true when ORB is given a higher limit. SIFT was 5–36× slower.
+>
+> For the viva, give the course's answer, and mention the measurement if asked to explain.
+
 ---
 
 ## 6. Mini project: panorama stitching
@@ -171,7 +182,7 @@ print("inliers:", mask.sum(), "of", len(mask))
 result = cv2.warpPerspective(img1, M, (w1 + w2, h))   # warp img1 into img2's coordinate frame
 ```
 
-> ⚠️ **Watch out in the course code:** it warps `img1` (left) into `img2`'s (right) frame and then pastes `img2` at the left of the canvas. For a normal left/right pair, the left image lands at **negative x** and gets cut off. The lab notebook shows the bug and the fix: map the **right** image into the **left** image's frame, or shift the canvas.
+> ⚠️ **Watch out in the course code:** it warps `img1` (left) into `img2`'s (right) frame and then pastes `img2` at the left of the canvas. For a normal left/right pair, the left image lands at **negative x** (−215 px in the lab) and gets cut off. What survives is then covered by the pasted right image, so the "panorama" is just the right photo plus black. The course's own saved output shows exactly this. The lab notebook shows the bug and the fix: warp the **right** image into the **left** image's frame on a shifted canvas.
 
 **Real-world uses:** phone panorama mode, satellite and drone image mosaics, Google Street View, medical slide scanning.
 

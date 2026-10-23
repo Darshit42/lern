@@ -154,7 +154,7 @@ with torch.no_grad():                           # no gradients needed → faster
     pred = model(data).argmax(dim=1)            # the digit with the highest score
 ```
 
-**Outcome:** accuracy improves with each epoch. The course's own run reached **98.79%** test accuracy after 2 epochs.
+**Outcome:** accuracy improves with each epoch. The course's own run reached **98.79%** test accuracy after 2 epochs. Our lab notebook ran 1 epoch on a shared CPU and got **98.56%** (144 mistakes out of 10,000) in about 5 minutes. Setting `EPOCHS = 2` restores the course setting.
 
 ---
 
@@ -163,7 +163,7 @@ with torch.no_grad():                           # no gradients needed → faster
 2. Test it with **custom digit images or drawings**.
 3. Evaluate the predictions.
 
-> ⚠️ Your own drawing must look like MNIST: **white digit on a black background, centred, 28×28, normalised** the same way. A black-on-white phone photo fed in directly gives nonsense. The lab notebook shows this.
+> ⚠️ Your own drawing must look like MNIST: **white digit on a black background, centred, 28×28, normalised** the same way. A black-on-white phone photo fed in directly gives nonsense. In the lab notebook, 30 drawn digits scored **2/30** fed in directly and **29/30** after full preprocessing.
 
 **Applications:** OCR, postal-code recognition, bank-cheque processing, digit-recognition apps, face unlock, medical image classifiers.
 

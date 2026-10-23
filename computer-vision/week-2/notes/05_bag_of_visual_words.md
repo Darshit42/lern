@@ -87,6 +87,12 @@ def build_histogram(des):
 
 > ⚠️ **The course notebook as given can't work.** It uses **3 images, one per class**, so the train/test split leaves 2 histograms to train on and 1 to test, which is why it reports **0%** (and k-means prints overflow warnings). A classifier needs **many** examples per class. The lab notebook rebuilds it on a real texture dataset with a proper train/test split.
 
+**What the Day 12 lab measured** on a real 7-class texture set (tested on unseen regions):
+- **Course settings (k = 20, linear SVM): 79%.**
+- **k = 100 with an RBF SVM: 97.5%.**
+- **Normalising histograms matters** when images differ in size: raw counts fell to 61.5% on bigger patches, while normalised histograms held 95.8%.
+- On completely new photos of the same materials it managed only 33%. BoVW learns the training textures' specific look, not "brick" in general.
+
 **Important rule:** build the vocabulary from **training images only**. If test images help choose the words, the test isn't fair ("data leakage").
 
 ---

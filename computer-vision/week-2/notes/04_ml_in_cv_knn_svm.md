@@ -105,6 +105,13 @@ svm.fit(X_train, y_train)
 
 ---
 
+### What the Day 11 lab measured
+- **On the 8×8 digits (30% test split):** kNN (k = 5) **99.26%**, linear SVM 97.96%, RBF SVM 98.70%.
+- **With 5-fold cross-validation:** the best k was 1 (98.65%), and a tuned RBF SVM reached 99.21%.
+- **On real MNIST (20,000 training images):** kNN 94.0%, RBF SVM **95.9%**, linear SVM 88.2%.
+- **Prediction speed:** kNN does get slower as the training set grows, which confirms the textbook. But an **RBF SVM was even slower** at prediction here (about 5 s vs 1.3–1.7 s), because it keeps thousands of support vectors. Only the *linear* SVM is really fast.
+- **Your own drawn digits:** 0/30 correct when fed in directly, 21/30 after preprocessing them to look like the training data.
+
 ## 4. Reading `classification_report`
 
 ```
