@@ -132,6 +132,13 @@
 - **Adagrad:** G += g⊙g, θ ← θ − η/√(G+ε)⊙g; per-parameter rate η/√G (rare features keep big steps: η 0.1, grads 3 and 4 → G 25 → 0.02); G only grows → rate → 0 → **stalls** (fixed by RMSProp/Adam's decaying average).
 - Best η differs by optimizer (SGD 0.3 · momentum 0.1 · Adagrad 0.03 · Adam 0.001 on digits); never reuse η across optimizers.
 
+## RMSprop, Adam, AdamW (03-09)
+- **RMSprop:** s = ρs + (1−ρ)g², θ ← θ − ηg/(√s+ε): Adagrad that **forgets** (doesn't stall).
+- **Adam:** m = β₁m + (1−β₁)g; v = β₂v + (1−β₂)g²; m̂ = m/(1−β₁ᵗ), v̂ = v/(1−β₂ᵗ); θ ← θ − ηm̂/(√v̂+ε). β₁ 0.9 (the handout table's 0.95 is inconsistent), β₂ 0.999, η ≈ 1e-3.
+- **Bias correction:** step 1 → m̂ = g, v̂ = g², step = η. Without it the first steps are **too big** (3.16η, peaking at 6.6η).
+- Adam's step is **scale-invariant** (loss ×1000: same result; SGD → NaN) → less tuning.
+- **AdamW:** θ ← θ − ηm̂/(√v̂+ε) − ηλθ (**decoupled**). Adam + L2 adds λθ to g, so the decay gets divided by √v̂ (uneven). Same λ = 0.01: Adam + L2 shrank weights 22 → 8.7 (−2.5 pts); AdamW barely acted. Don't copy λ between them.
+
 ## GenAI: from text to MiniGPT
 - Pipeline: text → IDs [B, T] → embeddings [B, T, d] + positions → L × (attention + FFN, residual, LayerNorm) → logits [B, T, V] → softmax → next token.
 - **Embeddings from statistics:** co-occurrence → PMI = log P(w,c)/(P(w)P(c)) (cat-pet: log 5) → low-dimensional factors; cosine = direction. Meaning emerges from prediction, with no labels.
@@ -152,5 +159,20 @@
 - Workflow: inspect → explore → encode (one-hot multi-valued) → **split (stratify) → impute/scale with train stats** → baselines → ANN → test-set metrics → interpret.
 - Multi-class: softmax + sparse CCE, labels 0…K−1. Binary: 1 sigmoid + BCE; the threshold is a business choice.
 - Forest cover: ANN 84.9% (class run 82.3%) vs baseline 48.8% vs **random forest 90.7%**; macro F1 exposes rare classes (Aspen recall 0.46); class weights raise rare recall but cost overall (balanced → 67%).
-- Airline: logistic regression 87.6% → ANN 96.1% (non-linear, U-shaped wifi effect) ≈ random forest 96.2%. Correlation ≠ importance.
+- Airline (class model, 4,417 params, 15 epochs): logistic regression 87.6% → ANN 95.85% (class PDF 95.83%) → 96.0% if trained longer ≈ random forest 96.2%. Non-linear U-shaped wifi effect; correlation ≠ importance. Best epoch = last epoch → train longer.
 - Val acc > train acc with dropout is normal. Params of Dense(n_in → n_out) = n_in·n_out + n_out.
+
+## GenAI: diffusion models
+- **Forward (fixed):** x_t = √α_t x_{t−1} + √β_t ε; **closed form x_t = √ᾱ_t x₀ + √(1−ᾱ_t) ε**, ᾱ = Πα. ᾱ 0.64 → 0.8x₀ + 0.6ε; ᾱ 0.81 → 0.9 / 0.436 (√ of the variances); β 0.04 → noise coef 0.2. SNR = ᾱ/(1−ᾱ).
+- **Train:** sample x₀, t, ε → x_t → MSE(ε, ε_θ(x_t, t)); one shared network + a sinusoidal t embedding; no labels needed.
+- **Sample:** x_T ~ N(0, I) → for t = T…1: mean = (x − β_t/√(1−ᾱ_t)·ε̂)/√α_t (+ σ_t z). DDIM: 10 steps ≈ 100 (measured); training steps ≠ sampling steps ≠ parameters.
+- **Conditioning** ε_θ(x_t, t, c) via cross-attention; **CFG** ε = ε_u + w(ε_c − ε_u): w = 1 hit 100%, larger w → less diversity. **Latent diffusion:** VAE encoder → diffuse in z → decoder. U-Net (skip connections) or DiT.
+- Ring lab: 37,762 params, 6 s, all 8 modes covered. The loss never reaches 0 (irreducible ambiguity).
+
+## GenAI: prompt engineering & context design
+- Prompting = inference-time conditioning, no weight change. Anatomy: **task · context · constraints · examples · output contract**.
+- Zero-shot first (46 tokens) → one-shot for format (58) → few-shot for ambiguous labels/edges (102). Examples = a tiny dataset (diverse, correct, consistent, with counterexamples; order matters).
+- **Budget I + E + R + H + O ≤ C** (16,000 − 1,000 − 2,000 − 4,000 − 2,000 = 7,000 for retrieval). Retrieve and rank instead of stuffing; put the best evidence first ("lost in the middle"); compress repetition, not meaning.
+- Structured output: request in the prompt, **validate in code** (JSON, enums, ranges, retry). Ground answers in sources + allow "Insufficient evidence".
+- **Injection:** untrusted data acting as instructions (direct / indirect via web, RAG, email). Delimiters and filters ≠ a boundary. Defences in code: least privilege, allowlisted tools, parameter validation, human approval, adversarial tests.
+- Evaluate prompts like code: buckets (normal, boundary, long-context, adversarial, format), accuracy + schema pass rate, version everything.
