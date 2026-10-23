@@ -10,8 +10,14 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 | History of Deep Learning (04-08-2026) | `01_history_of_deep_learning` | `02_neurons_1943_to_1986` (1943 neuron, 1958 perceptron, 1969 XOR failure, 1986 backprop, all runnable) |
 | AI vs ML vs DL vs GenAI & the Biological Neuron (05-08-2026) | `02_ai_ml_dl_genai_and_the_neuron` | `01_ai_ml_dl_genai_in_code` (one problem at all four levels) + `02_neurons_1943_to_1986` |
 | Perceptron (06-08-2026) | `03_perceptron` | `03_perceptron_from_scratch` |
-| Activation Functions (07-08-2026) + (Cont.) (11-08-2026) | `04_activation_functions` | `04_activation_functions` |
+| Activation Functions (07-08-2026) + (Cont.) (11-08-2026) + (Cont.) (13-08-2026) | `04_activation_functions` | `04_activation_functions` (section 6 = 13-08: ELU, GELU, SiLU, Softmax) |
+| Loss Functions (18-08-2026) | `06_loss_functions` | `06_loss_functions` |
+| Working of MLP / ANN (20-08-2026) | `07_working_of_mlp` | `07_mlp_from_scratch` (NumPy MLP + gradient checks) |
+| Weight Initialization (21-08-2026) | `08_weight_initialization` | `08_weight_initialization` |
 | Normalization and Regularization (04-09-2026) | `05_normalization_and_regularization` | `05_normalization_and_regularization` |
+| Text → Tokens → Vectors (handout) | `09_text_tokens_vectors` | `09_text_tokens_vectors` (real BERT tokenizer) |
+
+*Chapters are numbered by topic order (05 was written first), so read 06 → 08 before 05 if you want to follow the lecture dates.*
 
 ## What the experiments found (good for viva answers)
 - **Both perceptron worked examples check out** in code (z = 1.4 → Pass; w → (0.4, −0.1), b → −0.9). One update brings z closer to 0 but **doesn't yet fix** the mistake.
@@ -33,6 +39,11 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
   - L1 made 88% of the weights ≈ 0;
   - early stopping matched the accuracy at about 1/5 of the cost;
   - badly chosen augmentation **hurt**.
+- **Newer activations (13-08):** ELU 95.1%, GELU 93.4%, SiLU 92.5%: all beat plain ReLU (91.0%), none beat ReLU + He (96.9%). Softmax of (2.5, 1.2, 0.3) = 0.723 / 0.197 / **0.080** (the handout's 0.07 is a rounding slip).
+- **Loss functions:** one outlier is 99.6% of the MSE; when confidently wrong (logit −5), MSE's gradient is −0.013 but BCE's is −0.99; softmax + `CrossEntropyLoss` twice turns a 0.143 loss into 0.642.
+- **MLP backprop:** the lecture's formulas (δ = Ŷ − Y, …) match numerical derivatives to 10⁻¹¹ and PyTorch autograd to 10⁻¹⁷; a NumPy MLP reaches 96.4% test accuracy on digits.
+- **Weight initialization:** equal starting weights left 8 hidden neurons as **1 distinct neuron**; through 10 ReLU layers σ = 0.01 vanishes (10⁻¹⁰), σ = 1 explodes (10¹⁰), **He stays ≈ 1**; an 8-layer net trained with too-small init never learned (10%), too-large gave `nan`, He reached 100%.
+- **Tokens → vectors:** the handout's BPE merges reproduced exactly; BERT splits "Thiruvananthapuram" into 7 pieces and needs **2× more tokens** for the same sentence in Spanish than in English; with no position information, attention can't tell "dog bites man" from "man bites dog".
 - **AI → ML → DL → GenAI on digits:**
   - rules 97% (0 vs 1 only);
   - hand-made features 74%;
@@ -46,18 +57,18 @@ deep-learning-genai/
 ├── README.md                      ← you are here
 ├── DL_GenAI_Study_Guide.pdf       ← notes + notebooks (with outputs) + cheat sheet, printable
 ├── cheat-sheet.md                 ← one-page revision
-├── notes/                         ← 01 … 05 plain-language chapters
-├── notebooks/                     ← 01 … 05 runnable experiments
+├── notes/                         ← 01 … 09 plain-language chapters
+├── notebooks/                     ← 01 … 09 runnable experiments
 ├── images/                        ← diagrams and result plots used by the notes
 └── course-files/                  ← the original lecture handouts (PDF)
 ```
 
 ## Setup (once)
 ```
-pip install numpy matplotlib scikit-learn torch jupyter
+pip install numpy matplotlib scikit-learn torch jupyter tokenizers
 jupyter notebook           # then open notebooks/01_...
 ```
-Everything uses small built-in or generated data, so nothing is downloaded. Every notebook runs in **under about 2 minutes on a laptop CPU**. Google Colab works too.
+Everything uses small built-in or generated data. The only download is BERT's vocabulary file (≈ 230 KB) in notebook 09. Every notebook runs in **about 3 minutes or less on a laptop CPU**. Google Colab works too.
 
 ## Study plan
 | Step | Do this | Time |
@@ -67,7 +78,11 @@ Everything uses small built-in or generated data, so nothing is downloaded. Ever
 | 3 | Note 03, then notebook 03 (perceptron): redo both worked examples by hand first | 1 h |
 | 4 | Note 04, then notebook 04 (activations) | 1 h |
 | 5 | Note 05, then notebook 05 (normalisation and regularisation) | 1.25 h |
-| 6 | Check-yourself questions at the end of every note: answer out loud first | 1 h |
-| 7 | `cheat-sheet.md` the night before | 20 min |
+| 6 | Note 06, then notebook 06 (loss functions) | 45 min |
+| 7 | Note 07, then notebook 07 (MLP from scratch): follow the backprop table with a pen | 1.5 h |
+| 8 | Note 08, then notebook 08 (weight initialization) | 45 min |
+| 9 | Note 09, then notebook 09 (tokens → vectors): do the BPE exercise by hand first | 1.25 h |
+| 10 | Check-yourself questions at the end of every note: answer out loud first | 1.5 h |
+| 11 | `cheat-sheet.md` the night before | 20 min |
 
 > **Tip:** in every notebook, change one number (a learning rate, an α, a dropout p, a λ) and **predict** the result before re-running.
