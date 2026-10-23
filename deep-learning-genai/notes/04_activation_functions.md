@@ -1,9 +1,10 @@
-# 04 · Activation functions (lectures of 07-08-2026 and 11-08-2026)
+# 04 · Activation functions (lectures of 07-08, 11-08 and 13-08-2026)
 
 **Part 1 (07-08):** what an activation function is, why we need one, Step, Linear.
 **Part 2 (11-08):** Sigmoid, tanh, ReLU, Leaky ReLU, PReLU, vanishing gradients vs dying ReLU, which to use where.
+**Part 3 (13-08):** ELU, GELU, Swish/SiLU, Softmax, choosing output and hidden activations, ReLU sparsity (section 6).
 
-**Notebook:** `notebooks/04_activation_functions.ipynb` (plots of every function and its slope, the linear-collapse proof, vanishing and dying gradients measured, an honest comparison)
+**Notebook:** `notebooks/04_activation_functions.ipynb` (plots of every function and its slope, the linear-collapse proof, vanishing and dying gradients measured, an honest comparison; section 6 covers Part 3)
 
 ---
 
@@ -161,6 +162,99 @@ so adding more linear layers adds **no** power. The notebook **proves** it: a 4-
 
 ---
 
+## 6. Part 3 (13-08): ELU, GELU, Swish/SiLU and Softmax
+
+![ELU GELU SiLU](../images/ex04_elu_gelu_silu.png)
+
+*Notebook: the three smooth ReLU relatives (left) and their slopes (right).*
+
+### ELU: Exponential Linear Unit
+**ELU(z) = z if z > 0, else α·(eᶻ − 1)** (α = 1 by default)
+- Linear positive side (like ReLU); a **smooth exponential** negative side that levels off at **−α**. In the notebook, ELU(−10) = −0.99995.
+- **Pros:** smooth; can output negative values, so the average output is closer to 0; its slope never hits exactly 0.
+- **Cons:** the exponential costs more than ReLU's max; **not always better** in practice.
+- **Use:** a smooth ReLU alternative when negative outputs help.
+
+### GELU: Gaussian Error Linear Unit
+**GELU(z) = z·Φ(z)**, where Φ is the probability that a standard normal variable is below z.
+- In plain words: **z is multiplied by a "how much to let through" factor between 0 and 1** that rises smoothly with z. Large positive z passes almost unchanged; large negative z is blocked; near 0 it's partial. That's the lecture's "**softly gates** inputs rather than hard-thresholding them".
+- Dips slightly below 0 (lowest value **−0.170 at z ≈ −0.75**, measured).
+- **The activation used in Transformer feed-forward blocks** (BERT, GPT).
+- **Cons:** more expensive and more mathematically complex than ReLU.
+
+### Swish / SiLU
+**SiLU(z) = z·σ(z)** (the same idea as GELU, gating with the sigmoid instead of Φ).
+- Smooth and **non-monotonic**: it goes down to **−0.278 at z ≈ −1.28** and then back up towards 0, a small negative region.
+- Used in modern architectures (e.g. EfficientNet; LLaMA's SwiGLU blocks).
+- **Not guaranteed** to beat simpler choices.
+
+| z | −3 | −1 | −0.5 | 0 | 0.5 | 1 | 3 |
+|---|---|---|---|---|---|---|---|
+| ReLU | 0 | 0 | 0 | 0 | 0.5 | 1 | 3 |
+| ELU | −0.950 | −0.632 | −0.393 | 0 | 0.5 | 1 | 3 |
+| GELU | −0.004 | −0.159 | −0.154 | 0 | 0.346 | 0.841 | 2.996 |
+| SiLU | −0.142 | −0.269 | −0.189 | 0 | 0.311 | 0.731 | 2.858 |
+
+*(values computed in the notebook)*
+
+**Honest comparison** (same 6-layer digits benchmark as Part 2, default initialisation, 3 seeds): ELU **95.1%**, GELU **93.4%**, SiLU **92.5%**, against ReLU 91.0%, tanh 95.2% and **ReLU + He initialisation 96.9%**. The newer functions beat plain ReLU here, but none beat ReLU with proper initialisation. **Newer is not automatically better**, which is the lecture's own closing rule.
+
+### Softmax: turning scores into a probability distribution
+**pᵢ = e^{zᵢ} / Σⱼ e^{zⱼ}**, applied to the **whole vector** of class scores (logits), not to each neuron separately.
+
+The lecture's example, recomputed:
+
+| Class | Logit | e^z | Probability |
+|---|---|---|---|
+| cat | 2.5 | 12.182 | **0.723** |
+| dog | 1.2 | 3.320 | **0.197** |
+| horse | 0.3 | 1.350 | **0.080** |
+| | | sum 16.852 | **1.000** |
+
+> **Handout correction:** the lecture's table says horse ≈ **0.07**. The correct value is **0.080** (0.0801 rounds to 0.08), and with 0.73 + 0.20 + 0.07 the probabilities wouldn't even sum to 1.
+
+- Outputs are between 0 and 1 and **sum to 1**. Pairs naturally with **categorical cross-entropy** (chapter 06).
+- **Not for hidden layers.** **Not for multi-label** problems: there, use one **independent sigmoid per label**. Notebook demo: for scores (3, 2.8, −2) on a photo with both a cat and a dog, softmax gives 0.548 / 0.449 / 0.004 (cat and dog forced to split), while sigmoids give 0.953 / 0.943 / 0.119 (both "yes").
+- **Numerical stability:** e^1000 overflows. Naive softmax of (1000, 999, 998) gives `nan`; subtracting the maximum first gives (0.6652, 0.2447, 0.09), which is the correct answer, since the factor e^{−max} cancels. Built-ins (`torch.softmax`, `F.cross_entropy`) already do this.
+
+### ReLU sparsity
+ReLU sets every negative input to **exactly 0**:
+
+| input | −3 | −1 | 0.5 | 2 | −4 | 1 |
+|---|---|---|---|---|---|---|
+| ReLU | 0 | 0 | 0.5 | 2 | 0 | 1 |
+
+That's 3 zeros out of 6. In a real untrained ReLU layer on the digits, **51%** of the activations were exactly 0. Only some neurons "fire" for a given input, which is cheap and tends to give cleaner features.
+
+### Why the shape matters (recap)
+Backpropagation multiplies by the activation's slope. **Sigmoid/tanh saturate** (slope → 0 at both ends). **ReLU** doesn't saturate on the positive side, but its slope is **exactly 0** on the negative side. The smooth variants (ELU/GELU/SiLU) keep a small non-zero slope over part of the negative side.
+
+### Choosing the output activation
+
+| Task | Output | Why |
+|---|---|---|
+| binary classification | **sigmoid** | one probability in (0, 1) |
+| single-label multi-class | **softmax** | one distribution over classes |
+| multi-label | **sigmoid per label** | independent yes/no |
+| unrestricted regression | **linear / identity** | any real number |
+| positive-only regression | often **softplus** log(1 + eᶻ) | guarantees > 0 |
+| bounded regression | **scaled sigmoid / tanh** | stays in a known interval |
+
+### Choosing a hidden-layer activation
+
+| Situation | Start with | Why |
+|---|---|---|
+| general deep network | **ReLU** (+ He initialisation) | fast, simple, strong baseline |
+| ReLU neurons are dying | **Leaky ReLU** | keeps a negative-side gradient |
+| want the negative slope learned | **PReLU** | the slope is trainable |
+| Transformer-style model | **GELU** | the architecture's standard |
+| modern architecture that uses SiLU | **Swish / SiLU** | smooth and effective |
+| bounded, zero-centred state | **tanh** | range −1 to +1 |
+
+**Rules of thumb (lecture):** start with ReLU; binary output → sigmoid; single-label multi-class → softmax; unrestricted regression → linear; if ReLU neurons die → Leaky ReLU/PReLU and inspect the activations; tanh when a bounded zero-centred state is useful; GELU/SiLU when the architecture calls for them; **don't pick an activation because it's newer: validate it.**
+
+---
+
 ## Check yourself
 
 1. Compute σ(0), tanh(0), ReLU(−3), LeakyReLU(−3) with α = 0.01.
@@ -171,6 +265,11 @@ so adding more linear layers adds **no** power. The notebook **proves** it: a 4-
 6. Leaky ReLU vs PReLU: what is fixed and what is learned?
 7. Choose activations for: hidden layers of a CNN; the output of a spam detector; the output of a temperature predictor; an LSTM's hidden state.
 8. Which activation is zero-centred, sigmoid or tanh? Why does that matter?
+9. Compute ELU(−1) and SiLU(0) and GELU(0).
+10. Softmax of logits (2, 0): what are the probabilities?
+11. An image can be tagged "beach", "sunset" and "people" at once. Softmax or sigmoids at the output? Why?
+12. Why is naive softmax of (1000, 999, 998) `nan`, and how do you fix it?
+13. Choose an output activation for: house price; a probability-of-default model; the number of visitors tomorrow (must be > 0).
 
 <details><summary>Answers</summary>
 
@@ -182,4 +281,9 @@ so adding more linear layers adds **no** power. The notebook **proves** it: a 4-
 6. Leaky ReLU: the slope α is a fixed hyperparameter. PReLU: the slope a is a trainable parameter.
 7. ReLU (Leaky ReLU or PReLU if neurons die); sigmoid; linear; tanh.
 8. tanh. Zero-centred outputs keep the next layer's inputs balanced around 0, which helps optimisation (sigmoid outputs are always positive).
+9. ELU(−1) = e⁻¹ − 1 = −0.632. SiLU(0) = 0·0.5 = 0. GELU(0) = 0·0.5 = 0.
+10. e² = 7.389; 7.389 / 8.389 = **0.881** and 1 / 8.389 = **0.119**.
+11. Independent sigmoids: it's multi-label, so the labels shouldn't compete for a total of 1.
+12. e^1000 overflows to infinity, and ∞/∞ = nan. Subtract the maximum logit first (the answer is unchanged).
+13. Linear; sigmoid; softplus (or another positive transform).
 </details>
