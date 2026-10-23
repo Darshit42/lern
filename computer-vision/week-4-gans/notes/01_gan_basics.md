@@ -224,6 +224,15 @@ Early in training the fakes are bad, so D(G(z)) ≈ 0. The original term log(1 �
 | Loss G keeps rising, samples look like noise | D may be too strong |
 | shape-mismatch error | the noise size and `nn.Linear` input size disagree |
 
+> **What our rebuilt notebook actually got** (`notebooks/01_gan_basics_mnist.ipynb`, seed 0, CPU):
+> - **The course's exact settings collapsed.** With Adam's default β1 = 0.9, every sample became the same blob, and a digit classifier read all 1,000 samples as "8". The Class 1 guide expected "blotchy digits", but the Class 2–3 guide reports exactly this collapse for the same settings (its "Run A"). GANs are that sensitive to seeds and settings.
+> - **Losses (last batch of each epoch):** epoch 1 D 0.590 / G 1.404, epoch 2 D 1.042 / G 1.058, against the reference values 1.386 / 0.693. They look "reasonable" even though the output had collapsed: **losses don't show quality**.
+> - **Experiment results (Task 3):**
+>   - A (5 epochs, watching fixed noise): the collapse slowly breaks.
+>   - B (latent size 10): still collapsed.
+>   - C (D's learning rate 10×): D wins outright (Loss D 0.048, Loss G 5.1).
+>   - **D (betas = (0.5, 0.999)): the fix.** All ten digits appear (42–166 of each per 1,000 samples).
+
 **Preview of what goes wrong (chapter 02):**
 - **mode collapse:** one output that fools D, repeated;
 - **non-convergence:** the players chase each other in circles;

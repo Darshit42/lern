@@ -118,6 +118,17 @@ In a real G the kernels are **learned**, so each feature stamps a learned patch 
 | Rarest digit | 6: none at all | 1: 12 of 1,000 |
 | D(x) / D(G(z)) | ≈ 0.7 / 0.4 | ≈ 0.9 / 0.15: D is clearly ahead, but D(G(z)) isn't stuck at 0 and the samples improve → **healthy** (case d) |
 
+**Our rebuilt notebook vs the course guide:**
+
+| | Our run | Course guide |
+|---|---|---|
+| CNN digit counter accuracy | 98.1% | 98.1% |
+| MLP GAN: evenness, rarest digit | 0.816, 6 (4 of 1,000) | 0.786, 6 (0) |
+| DCGAN: evenness, rarest digit | 0.922, 1 (10) | 0.929, 1 (12) |
+| conditional accuracy | **84.4%** | 84.4% (same total by coincidence; the per-digit split differs) |
+| mismatch test (7s scored with label 7 vs label 1) | 0.248 vs 0.063 | 0.315 vs 0.141 |
+| assignment C: `nn.Embedding(10, 50)` instead of one-hot | 78.7% conditional accuracy (one seed, 2 epochs, so not proof that embeddings are worse) | — |
+
 **Lesson:** the architecture changed **what kind of mistakes** G makes. It is undertrained, not broken. Our rebuilt notebook reruns all of this, and your numbers will differ slightly.
 
 ### The Class 1 skeleton (CelebA faces, 32×32 colour)

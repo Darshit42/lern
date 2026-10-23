@@ -151,6 +151,8 @@ These numbers are already in the loop (`outputs_real.mean()`, `outputs_fake.mean
 |---|---|---|---|---|---|
 | 1/8 modes | 0/8, scattered | 1/8 | 1/8, sharper | **8/8** | **8/8** (thin ring) |
 
+**Our rebuilt notebook (seed 0) reproduced this:** baseline 1/8 (hopping), A 0/8, B 1/8, C 2/8, **D 8/8, E 8/8**. Re-run with seed 1, both successful fixes still reached 8/8. Combining minibatch std with TTUR gave only 6/8 and 7/8: two good ideas don't simply add up.
+
 > **Lesson:** match the fix to the cause. Collapse happens because D **can't see variety**. Minibatch std gives D exactly that information (the spread of the whole batch), so it fixed the collapse. Smoothing and noise calm an **over-confident** D, which is a different problem, so they didn't help. Better quality (TTUR) is not better variety. Our rebuilt notebook reruns this, and your numbers may differ.
 
 ### WGAN (intuition only)
@@ -162,6 +164,7 @@ These numbers are already in the loop (`outputs_real.mean()`, `outputs_fake.mean
 ### MNIST: Run A vs Run B (course's run, seed 0, 3 epochs)
 - **Run A** (Class 1 settings, β1 = 0.9): **collapsed completely**. Every fixed-noise image was the same noisy blob, and the digit counter said "1,000 eights" even though the grid showed no eights at all.
 - **Run B** (β1 = 0.5 + label smoothing 0.9): recognisable digits with all **ten** present.
+- **Our rebuilt run matched it:** Run A again gave "1,000 eights" from one collapsed blob, and Run B produced all ten digits (14–197 of each).
 - **One optimiser setting changed everything, and the losses alone couldn't tell you which run was healthy.**
 
 ---

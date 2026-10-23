@@ -39,6 +39,21 @@ The results are discussed **honestly**. Where a classic method wins on our small
 
 ---
 
+## The Week 3 labs (`labs/`)
+Each course lab notebook (`course-files/labs/CV-Week3-Lecture1–7.ipynb`) is worked through: the course's code is kept recognisable but **fixed**, explained line by line and **run with outputs**. Each one ends with "What we changed and why", "Results, honestly", common errors, a Colab guide and **viva questions**.
+
+| Lab | Topic | Key findings |
+|---|---|---|
+| `lab1_vgg_cifar10_image_classifier` | VGG16 on CIFAR-10 | the course recipe (VGG16, Adam lr 1e-3) **doesn't learn** (10%, dead ReLUs); lr 1e-4 → 17.5% after 1 epoch; a small VGG-style net → 62.2% with 165× fewer parameters; forgetting `eval()` → 27% |
+| `lab2_resnet_transfer_learning_flowers` | ResNet18 transfer learning | frozen pretrained ResNet18 + new `fc` → **80.8%** on 500 photos vs 46.8% from scratch; forgetting `eval()` → 47.2% |
+| `lab3_object_detection_faster_rcnn_yolo` | Faster R-CNN, YOLO | the course COCO loader crashes (needs `collate_fn`); `results.show()` crashes (list); YOLO confidence/NMS sweeps with precision-recall on COCO128 |
+| `lab4_unet_medical_segmentation` | U-Net on EM images | the course "U-Net" has **no skip connections**; the real U-Net: Dice 0.736 vs 0.160; depth without skips doesn't help |
+| `lab5_mask_rcnn_people_segmentation` | instance segmentation | precision 0.86 / recall 0.33 on COCO128; crowd counting, score thresholds, instance vs semantic |
+| `lab6_cnn_lstm_action_gesture_recognition` | CNN + LSTM on video | the course labels every video 0; fixed: **91%** vs 44% (frame average) and 25% (single frame); reversed clips flip left↔right |
+| `lab7_vit_cifar10_classifier` | ViT on CIFAR-10 | full fine-tuning is about 31 h/epoch on CPU; a frozen pretrained ViT-B/16 + head → **88.2%** on 1,000 images vs 31% for a tiny ViT from scratch (a CNN from scratch: 53.4%) |
+
+Pretrained weights and datasets the course uses (torchvision weights, CIFAR-10, COCO) were blocked on the build machine. Each lab **tries the official route first** (which works on a normal connection) and falls back to an equivalent source, printing which one ran.
+
 ## Folder map
 ```
 week-2-3/
@@ -48,6 +63,7 @@ week-2-3/
 ├── notes/                        ← 00 … 07 plain-language notes with diagrams (start here)
 ├── images/                       ← diagrams and result plots used by the notes
 ├── notebooks/                    ← 01 … 07 (read the text, run the cells, change the numbers)
+├── labs/                         ← the 7 course lab notebooks (CV-Week3-Lecture1–7) worked through, fixed and run
 ├── practice/
 │   ├── question_bank_answers.md  ← model answers to all 60 questions in the course's question bank
 │   ├── practice_exercises.ipynb  ← 13 fill-in-the-blank coding exercises with PASS/FAIL checks
