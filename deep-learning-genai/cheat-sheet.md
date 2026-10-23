@@ -125,6 +125,13 @@
 - **Exploding gradient:** η 0.001 × grad 10,000 = update 10. **Clip by value** [−10, −4, −1, 0.5, 3, 8] → [−2, −2, −1, 0.5, 2, 2] (direction changes) · **clip by norm** [3, 4] (‖g‖ = 5), c = 2 → [1.2, 1.6] (direction kept, the first choice). Keras `clipnorm=1.0` / `clipvalue=1.0`; PyTorch `clip_grad_norm_` between `backward()` and `step()`.
 - Clipping does **not** fix vanishing gradients, bad initialization, a bad η, over/underfitting. **Clipping edits g; a schedule edits η.**
 
+## Optimizers: GD, SGD, mini-batch, momentum, Adagrad (01-09, 02-09)
+- Same rule **W ← W − η·∂L/∂W**; only the data per gradient differs. 10,000 records: **GD 1** iteration/epoch (smooth, slow, memory-hungry) · **SGD 10,000** (noisy, jitters at the minimum) · **mini-batch (1,000) 10** = N / batch size (the default).
+- **Momentum:** v_t = βv_{t−1} + η∇J, θ ← θ − v_t, v₀ = 0; unrolled v = ηΣβ^(t−i)g_i; amplification **1/(1−β)** (0.9 → 10×, 0.99 → 100×); damps zig-zag, but can overshoot. Speed-up grows with ravine steepness (1.2× → 23× measured).
+- **Nesterov:** gradient at the look-ahead θ − βv_{t−1}; less overshoot.
+- **Adagrad:** G += g⊙g, θ ← θ − η/√(G+ε)⊙g; per-parameter rate η/√G (rare features keep big steps: η 0.1, grads 3 and 4 → G 25 → 0.02); G only grows → rate → 0 → **stalls** (fixed by RMSProp/Adam's decaying average).
+- Best η differs by optimizer (SGD 0.3 · momentum 0.1 · Adagrad 0.03 · Adam 0.001 on digits); never reuse η across optimizers.
+
 ## GenAI: from text to MiniGPT
 - Pipeline: text → IDs [B, T] → embeddings [B, T, d] + positions → L × (attention + FFN, residual, LayerNorm) → logits [B, T, V] → softmax → next token.
 - **Embeddings from statistics:** co-occurrence → PMI = log P(w,c)/(P(w)P(c)) (cat-pet: log 5) → low-dimensional factors; cosine = direction. Meaning emerges from prediction, with no labels.

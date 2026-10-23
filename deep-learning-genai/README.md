@@ -17,6 +17,7 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 | Normalization and Regularization (04-09-2026) | `05_normalization_and_regularization` | `05_normalization_and_regularization` |
 | Text → Tokens → Vectors (handout) | `09_text_tokens_vectors` | `09_text_tokens_vectors` (real BERT tokenizer) |
 | Loss Landscapes & Optimizers (27-08-2026) | `10_loss_landscapes_and_optimizers` | `10_loss_landscapes_and_optimizers` |
+| Optimizers in Neural Networks (01-09-2026) + SGD with Momentum, and Adagrad (02-09-2026) | `13_optimizers_gd_sgd_momentum_adagrad` | `13_gd_sgd_momentum_adagrad` |
 | GenAI Study Notes: From Text to MiniGPT (Polaris) | `11_transformer_and_minigpt` | `11_transformer_and_minigpt` (train a GPT from scratch in ~12 s) |
 | GenAI: Autoregressive & Encoder-Decoder Models (Polaris) | `12_autoregressive_and_encoder_decoder` | `12_autoregressive_encoder_decoder` (cross-attention made visible) |
 | Case study: ANN multi-class forest cover type (class Colab) | `case-studies/README.md` | `case-studies/01_forest_cover_multiclass_ann` |
@@ -50,6 +51,7 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 - **Weight initialization:** equal starting weights left 8 hidden neurons as **1 distinct neuron**; through 10 ReLU layers σ = 0.01 vanishes (10⁻¹⁰), σ = 1 explodes (10¹⁰), **He stays ≈ 1**; an 8-layer net trained with too-small init never learned (10%), too-large gave `nan`, He reached 100%.
 - **Tokens → vectors:** the handout's BPE merges reproduced exactly; BERT splits "Thiruvananthapuram" into 7 pieces and needs **2× more tokens** for the same sentence in Spanish than in English; with no position information, attention can't tell "dog bites man" from "man bites dog".
 - **Optimizers:** on L = w², η = 1.05 diverges (w 5 → 33.6 in 20 steps); escaping the x² − y² saddle took 73 steps for plain GD, 27 with momentum, 20 with Adam; an exploding RNN went NaN without clipping, learned with norm clipping (MSE 0.048), and barely learned with value clipping (0.227). Schedules made **no** difference on a small easy problem (97.6–97.8%).
+- **GD / SGD / mini-batch:** 1 / 10,000 / 10 iterations per epoch confirmed; SGD read the least data but was slowest in wall-clock time. **Momentum's speed-up grows with ravine steepness** (1.2× at 5:1 → 23× at 1000:1, so the lecture's "2–5×" is a middle value); β = 0.9 / 0.99 amplify steps exactly 10× / 100×; Adagrad gave rare features 9–14× bigger steps but **stalled** at θ = 80.5 of 100 where RMSProp arrived in 137 steps. On a real network, all optimizers tied (96.7–97.3%) at their own best learning rates.
 - **MiniGPT** (107K parameters) learns the corpus in 12 s; removing the causal mask gives a "perfect" loss (0.003) but garbage text, because it was **cheating**.
 - **Encoder-decoder:** cross-attention on a reversal task forms a clean anti-diagonal; exposure bias measured (90.5% teacher-forced vs 81.9% free-running token accuracy); a decoder-only model solves the same task equally well.
 - **AI → ML → DL → GenAI on digits:**
@@ -65,8 +67,8 @@ deep-learning-genai/
 ├── README.md                      ← you are here
 ├── DL_GenAI_Study_Guide.pdf       ← notes + notebooks (with outputs) + cheat sheet, printable
 ├── cheat-sheet.md                 ← one-page revision
-├── notes/                         ← 01 … 12 plain-language chapters
-├── notebooks/                     ← 01 … 12 runnable experiments
+├── notes/                         ← 01 … 13 plain-language chapters
+├── notebooks/                     ← 01 … 13 runnable experiments
 ├── case-studies/                  ← end-to-end ANN projects on real tables (+ data/)
 ├── images/                        ← diagrams and result plots used by the notes
 └── course-files/                  ← the original lecture handouts (PDF)
@@ -92,6 +94,7 @@ Everything uses small built-in or generated data, or the CSVs in `case-studies/d
 | 8 | Note 08, then notebook 08 (weight initialization) | 45 min |
 | 9 | Note 09, then notebook 09 (tokens → vectors): do the BPE exercise by hand first | 1.25 h |
 | 10 | Note 10, then notebook 10 (optimizers, schedules, clipping) | 1 h |
+| 10b | Note 13, then notebook 13 (GD/SGD/mini-batch, momentum, Adagrad) | 1 h |
 | 11 | Notes 11–12, then notebooks 11–12 (MiniGPT, encoder-decoder) | 3 h |
 | 12 | Case studies 1–2 (`case-studies/`): run them, then change one thing and compare | 2 h |
 | 13 | Check-yourself questions at the end of every note: answer out loud first | 2 h |
