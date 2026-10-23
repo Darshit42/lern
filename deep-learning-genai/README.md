@@ -16,6 +16,11 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 | Weight Initialization (21-08-2026) | `08_weight_initialization` | `08_weight_initialization` |
 | Normalization and Regularization (04-09-2026) | `05_normalization_and_regularization` | `05_normalization_and_regularization` |
 | Text → Tokens → Vectors (handout) | `09_text_tokens_vectors` | `09_text_tokens_vectors` (real BERT tokenizer) |
+| Loss Landscapes & Optimizers (27-08-2026) | `10_loss_landscapes_and_optimizers` | `10_loss_landscapes_and_optimizers` |
+| GenAI Study Notes: From Text to MiniGPT (Polaris) | `11_transformer_and_minigpt` | `11_transformer_and_minigpt` (train a GPT from scratch in ~12 s) |
+| GenAI: Autoregressive & Encoder-Decoder Models (Polaris) | `12_autoregressive_and_encoder_decoder` | `12_autoregressive_encoder_decoder` (cross-attention made visible) |
+| Case study: ANN multi-class forest cover type (class Colab) | `case-studies/README.md` | `case-studies/01_forest_cover_multiclass_ann` |
+| Case study: airline passenger satisfaction (binary, data only) | `case-studies/README.md` | `case-studies/02_airline_satisfaction_binary_ann` |
 
 *Chapters are numbered by topic order (05 was written first), so read 06 → 08 before 05 if you want to follow the lecture dates.*
 
@@ -44,6 +49,9 @@ Beginner-friendly study kit for the **DL and GenAI** lecture handouts. It is kep
 - **MLP backprop:** the lecture's formulas (δ = Ŷ − Y, …) match numerical derivatives to 10⁻¹¹ and PyTorch autograd to 10⁻¹⁷; a NumPy MLP reaches 96.4% test accuracy on digits.
 - **Weight initialization:** equal starting weights left 8 hidden neurons as **1 distinct neuron**; through 10 ReLU layers σ = 0.01 vanishes (10⁻¹⁰), σ = 1 explodes (10¹⁰), **He stays ≈ 1**; an 8-layer net trained with too-small init never learned (10%), too-large gave `nan`, He reached 100%.
 - **Tokens → vectors:** the handout's BPE merges reproduced exactly; BERT splits "Thiruvananthapuram" into 7 pieces and needs **2× more tokens** for the same sentence in Spanish than in English; with no position information, attention can't tell "dog bites man" from "man bites dog".
+- **Optimizers:** on L = w², η = 1.05 diverges (w 5 → 33.6 in 20 steps); escaping the x² − y² saddle took 73 steps for plain GD, 27 with momentum, 20 with Adam; an exploding RNN went NaN without clipping, learned with norm clipping (MSE 0.048), and barely learned with value clipping (0.227). Schedules made **no** difference on a small easy problem (97.6–97.8%).
+- **MiniGPT** (107K parameters) learns the corpus in 12 s; removing the causal mask gives a "perfect" loss (0.003) but garbage text, because it was **cheating**.
+- **Encoder-decoder:** cross-attention on a reversal task forms a clean anti-diagonal; exposure bias measured (90.5% teacher-forced vs 81.9% free-running token accuracy); a decoder-only model solves the same task equally well.
 - **AI → ML → DL → GenAI on digits:**
   - rules 97% (0 vs 1 only);
   - hand-made features 74%;
@@ -57,18 +65,19 @@ deep-learning-genai/
 ├── README.md                      ← you are here
 ├── DL_GenAI_Study_Guide.pdf       ← notes + notebooks (with outputs) + cheat sheet, printable
 ├── cheat-sheet.md                 ← one-page revision
-├── notes/                         ← 01 … 09 plain-language chapters
-├── notebooks/                     ← 01 … 09 runnable experiments
+├── notes/                         ← 01 … 12 plain-language chapters
+├── notebooks/                     ← 01 … 12 runnable experiments
+├── case-studies/                  ← end-to-end ANN projects on real tables (+ data/)
 ├── images/                        ← diagrams and result plots used by the notes
 └── course-files/                  ← the original lecture handouts (PDF)
 ```
 
 ## Setup (once)
 ```
-pip install numpy matplotlib scikit-learn torch jupyter tokenizers
+pip install numpy matplotlib scikit-learn torch jupyter tokenizers pandas seaborn keras
 jupyter notebook           # then open notebooks/01_...
 ```
-Everything uses small built-in or generated data. The only download is BERT's vocabulary file (≈ 230 KB) in notebook 09. Every notebook runs in **about 3 minutes or less on a laptop CPU**. Google Colab works too.
+Everything uses small built-in or generated data, or the CSVs in `case-studies/data/`. The only download is BERT's vocabulary file (≈ 230 KB) in notebook 09. Every notebook runs in **about 4 minutes or less on a laptop CPU**; the forest-cover case study takes about 12 minutes. Google Colab works too.
 
 ## Study plan
 | Step | Do this | Time |
@@ -82,7 +91,10 @@ Everything uses small built-in or generated data. The only download is BERT's vo
 | 7 | Note 07, then notebook 07 (MLP from scratch): follow the backprop table with a pen | 1.5 h |
 | 8 | Note 08, then notebook 08 (weight initialization) | 45 min |
 | 9 | Note 09, then notebook 09 (tokens → vectors): do the BPE exercise by hand first | 1.25 h |
-| 10 | Check-yourself questions at the end of every note: answer out loud first | 1.5 h |
-| 11 | `cheat-sheet.md` the night before | 20 min |
+| 10 | Note 10, then notebook 10 (optimizers, schedules, clipping) | 1 h |
+| 11 | Notes 11–12, then notebooks 11–12 (MiniGPT, encoder-decoder) | 3 h |
+| 12 | Case studies 1–2 (`case-studies/`): run them, then change one thing and compare | 2 h |
+| 13 | Check-yourself questions at the end of every note: answer out loud first | 2 h |
+| 14 | `cheat-sheet.md` the night before | 30 min |
 
 > **Tip:** in every notebook, change one number (a learning rate, an α, a dropout p, a λ) and **predict** the result before re-running.

@@ -116,3 +116,34 @@
 - Embedding: lookup = one-hot × E (lookup is cheaper). Params **V × d**: 30,000 × 768 = **23.04M** (92.16 MB fp32); 50,000 × 512 = 25.6M (102.4 MB). Only the used rows get gradients ([4, 9, 4] → row 4 gets two).
 - Attention is **permutation equivariant** → needs positions. Learned (L_max × d) or sinusoidal: PE(pos, 2i) = sin(pos/10000^{2i/d}), cos for 2i+1. d = 4, pos 1 → [0.8415, 0.5403, 0.0100, 0.99995]. Modern: RoPE.
 - BERT: Thiruvananthapuram → 7 pieces; the same sentence costs 6 tokens in English, 13 in Spanish (**fairness**).
+
+## Loss landscapes & optimizers (27-08)
+- **W ← W − η·∂L/∂W.** η too large → overshoot, oscillate, diverge, NaN; too small → very slow. On L = w²: converges iff 0 < η < 1.
+- **Schedules:** step decay η₀γ^⌊t/k⌋ (0.01 → 0.001 → 0.0001) · exponential η₀γᵗ · **ReduceLROnPlateau** (cut when validation loss stalls; patience) · **cosine** η_min + ½(η_max − η_min)(1 + cos πt/T) · **warm-up** (start small, then hand over). Measured: no gain on a small easy task, so validate.
+- **Saddle** f = x² − y²: gradient 0 at (0, 0), min along x, max along y → looks "stuck". Escape steps: GD 73 · momentum 27 · Adam 20. Local min (gradient 0, not lowest) vs global min.
+- **Momentum** v ← βv − η∇L (remembers the past) · **Adam** = momentum (1st moment) + adaptive scaling (2nd moment).
+- **Exploding gradient:** η 0.001 × grad 10,000 = update 10. **Clip by value** [−10, −4, −1, 0.5, 3, 8] → [−2, −2, −1, 0.5, 2, 2] (direction changes) · **clip by norm** [3, 4] (‖g‖ = 5), c = 2 → [1.2, 1.6] (direction kept, the first choice). Keras `clipnorm=1.0` / `clipvalue=1.0`; PyTorch `clip_grad_norm_` between `backward()` and `step()`.
+- Clipping does **not** fix vanishing gradients, bad initialization, a bad η, over/underfitting. **Clipping edits g; a schedule edits η.**
+
+## GenAI: from text to MiniGPT
+- Pipeline: text → IDs [B, T] → embeddings [B, T, d] + positions → L × (attention + FFN, residual, LayerNorm) → logits [B, T, V] → softmax → next token.
+- **Embeddings from statistics:** co-occurrence → PMI = log P(w,c)/(P(w)P(c)) (cat-pet: log 5) → low-dimensional factors; cosine = direction. Meaning emerges from prediction, with no labels.
+- **Attention** = softmax(QKᵀ/√d_k)V. Q "what I need", K "what I offer", V "what I give". "The cat sleeps": scores [1, 2, 1] → [0.212, 0.576, 0.212] (unscaled). ÷√d_k stops softmax becoming one-hot at large d.
+- **Causal mask** = lower-triangular, −∞ before softmax. **No mask → loss 0.003 but garbage text (cheating).**
+- d_head = d_model / H (256/8 = 32). Scores [B, H, T, T]. Attention = communication, **FFN** = computation (4× expand, GELU), **residual** x + F(x), **pre-norm**.
+- MiniGPT: char-level, context 64, d 64, 4 heads, 2 blocks → 107K params, loss 3.25 → 0.1 in 600 AdamW steps. Sampling: temperature (sharpen/flatten), top-k, top-p; **KV cache** for fast decoding.
+
+## GenAI: autoregressive & encoder-decoder
+- **Autoregressive** = p(y₁…y_T) = ∏ p(yₜ | y<t): 0.6 × 0.5 × 0.8 = 0.24; train on −Σ log p (no underflow).
+- **Encoder-only** (BERT: classify) · **decoder-only** (GPT: generate) · **encoder-decoder** (T5/BART: translate, summarize).
+- Encoder → **memory M [B, S, d]** (contextual vectors, not logits). Decoder block: masked self-attention → **cross-attention (Q from decoder, K/V from M; scores T × S)** → FFN. Head on the **decoder**.
+- **Teacher forcing:** input BOS + target, predict target + EOS; pad tokens ignored in the loss. **Exposure bias:** 90.5% (teacher-forced) vs 81.9% (free-running) token accuracy.
+- Inference: encode once → BOS → choose → append → repeat to EOS. Cache encoder memory and K/V (T = 1,000: 500,500 → 1,000 positions). Greedy / beam / sampling.
+- Choose by **what must be visible at prediction time**. Misconception: "autoregressive = decoder-only".
+
+## Case studies (tabular ANNs)
+- Workflow: inspect → explore → encode (one-hot multi-valued) → **split (stratify) → impute/scale with train stats** → baselines → ANN → test-set metrics → interpret.
+- Multi-class: softmax + sparse CCE, labels 0…K−1. Binary: 1 sigmoid + BCE; the threshold is a business choice.
+- Forest cover: ANN 84.9% (class run 82.3%) vs baseline 48.8% vs **random forest 90.7%**; macro F1 exposes rare classes (Aspen recall 0.46); class weights raise rare recall but cost overall (balanced → 67%).
+- Airline: logistic regression 87.6% → ANN 96.1% (non-linear, U-shaped wifi effect) ≈ random forest 96.2%. Correlation ≠ importance.
+- Val acc > train acc with dropout is normal. Params of Dense(n_in → n_out) = n_in·n_out + n_out.
