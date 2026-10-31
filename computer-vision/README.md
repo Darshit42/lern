@@ -10,4 +10,7 @@ Each part of the course has its own folder. Open the folder's `README.md` first.
 | [`week-4-gans/`](week-4-gans/) | GAN Classes 1–4: generator/discriminator and minimax, training dynamics (Nash equilibrium, instability, mode collapse, fixes), DCGAN and conditional GAN | Notes + the 3 course notebooks rebuilt and run | `week-4-gans/Week4_GANs_Study_Guide.pdf` |
 | [`project/`](project/) | Mid-term project: three complete starter notebooks (face-recognition security, licence-plate OCR violations, attendance system) + report template | Jupyter notebooks | `project/README.md` |
 
+> **Exam question bank (57 questions) with model answers:** [`Exam_Question_Bank_Answers.md`](Exam_Question_Bank_Answers.md) (printable: `Exam_Question_Bank_Answers.pdf`).
+
+
 Every folder has a `course-files/` subfolder with the original course PDFs and notebooks, so each week's material stays together.
