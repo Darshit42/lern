@@ -1,659 +1,736 @@
-# Computer Vision: Exam Question Bank (57 questions) with Model Answers
+# Computer Vision: Exam Question Bank (57 questions), answered from your course files only
 
-Questions 1–19 are short answers (2 marks), 20–38 medium (5 marks), and 39–57 long (10 marks). The numbering matches the question list exactly.
-Each answer ends with **→ notes:** pointing to the full explanation in this repository.
+Every answer below uses **only** your course material: the lecture PDFs, Key Concepts PDFs, lab notebooks and GAN slides/guides. Nothing from outside the course is added.
+Each answer ends with its **Source**. Where your files don't cover something a question asks, the answer says so with ⚠, instead of filling the gap from outside.
 
-The GAN "notebook" questions (16–19, 30–32, 47, 48, 53) refer to the course's MNIST GAN: `week-4-gans/notes/01_gan_basics.md`.
+**Source key**
+- **W1-KC**: `week-1/course-files/lecture-pdfs/Key_Concepts.pdf`
+- **D1-3 / D4 / D5 / D6**: the Week 1 lecture PDFs (`Days_1-3_Lectures.pdf`, `Day_4_Histograms_and_Thresholding.pdf`, `Day_5_Morphological_Operations.pdf`, `Day_6_Contours_and_Shape_Analysis.pdf`)
+- **W2-KC**: `week-2/course-files/CV-Week-2-KeyConcepts.pdf` · **W2-Lab n**: `week-2/course-files/labs/CV-Week2-Lecture{n}.ipynb`
+- **W3-KC**: `week-2-3/course-files/CV-Week3-KeyConcepts.pdf`
+- **GAN-1 / GAN-2-3**: `week-4-gans/course-files/GAN_Class_1_Basics.pptx` / `GAN_Class_2_3_Training_Dynamics.pptx`
 
 ---
 
 ## Short answers (1–19)
 
 **1. Define a pixel in the context of digital images.**
-A pixel (picture element) is the smallest unit of a digital image: one cell of the image grid, holding a number (grayscale intensity, 0 = black to 255 = white in 8-bit images) or a small vector of numbers (e.g. B, G, R). An image is a matrix of pixels addressed by row (y) and column (x), with the origin (0, 0) at the top-left.
-→ notes: `week-1/notes/day1_images_and_colors.md`
+Digital images are **grids of pixels**. An image is stored as a matrix of numbers, where **each number is the intensity or colour value of one pixel**. In a grayscale image a pixel is a single number (0 = black, 255 = white). In a colour image each pixel has 3 values (R, G, B; OpenCV stores them as B, G, R). The origin (0, 0) is the top-left corner, and a pixel is accessed as `image[y, x]`.
+*Source: W1-KC (Image Representation Basics); D1-3 (Images as Data).*
 
 **2. What is the difference between grayscale and color image representation?**
-A **grayscale** image is a 2-D matrix (height × width) with one intensity value per pixel. A **color** image is a 3-D array (height × width × 3) with three channel values per pixel (e.g. B, G, R), so it carries hue information but needs 3× the memory.
-→ notes: `week-1/notes/day1_images_and_colors.md`
+- **Grayscale → 2D matrix:** one channel, and each pixel is a single number from 0 (black) to 255 (white). `img_gray.shape` = (rows, cols).
+- **Colour (RGB/BGR) → 3D matrix:** three channels, and each pixel has 3 values, e.g. [255, 0, 0] = pure red. `img_color.shape` = (rows, cols, 3).
+
+*Source: W1-KC; W2-KC (Image Basics: "Grayscale = one channel, RGB = three channels").*
 
 **3. Why is OpenCV's color order BGR instead of RGB?**
-It's historical. When OpenCV was created (around 2000), BGR was a common byte order in camera hardware and Windows image formats, and OpenCV kept it for backward compatibility. Practical consequence: convert with `cv2.cvtColor(img, cv2.COLOR_BGR2RGB)` before displaying with Matplotlib, or red and blue appear swapped.
-→ notes: `week-1/notes/day1_images_and_colors.md`
+Your course states the fact and its consequence: **OpenCV uses BGR order (Blue, Green, Red), while Matplotlib expects RGB.** So before displaying an OpenCV image with Matplotlib you convert it with `cv2.cvtColor(img, cv2.COLOR_BGR2RGB)`, as every course notebook does. Printing a pixel, e.g. `img[50, 50]`, gives **BGR** values.
+⚠ *Your course files do not explain **why** OpenCV chose BGR; they only state that it does.*
+*Source: W1-KC; D1-3.*
 
 **4. What does the `img.shape` attribute return in NumPy?**
-A tuple of the array's dimensions: **(height, width, channels)** for a color image, e.g. (480, 640, 3), and **(height, width)** for a grayscale image. The order is rows first (height), then columns (width).
-→ notes: `week-1/notes/day2_transformations.md`
+The array's dimensions:
+- **colour image:** `(height, width, channels)` (rows, cols, 3), e.g. `(5472, 3648, 3)` in the Day 1 lecture;
+- **grayscale image:** `(rows, cols)`.
+
+`rows, cols = img.shape[:2]` is used before transformations.
+*Source: D1-3 ("Image shape: (height, width, channels)"); W1-KC.*
 
 **5. Define a feature in computer vision.**
-A feature is a distinctive, measurable piece of information in an image, such as an edge, corner, blob, texture pattern or color region, that helps identify, match or describe objects. Good features are repeatable under changes in viewpoint, lighting and scale.
-→ notes: `week-2/notes/01_feature_detection_harris_sift_orb.md`
+Features are **distinctive, informative patterns in an image that can be detected, described, and compared**. They are the building blocks for recognition, matching and tracking. Kinds:
+- **corners:** intensity changes in two directions;
+- **edges:** boundaries between regions of different brightness or texture;
+- **blobs/keypoints:** regions that stand out from their surroundings;
+- **descriptors:** numerical vectors describing the neighbourhood.
+
+Good features have **uniqueness**, **repeatability** and give a **compact representation**.
+*Source: W2-KC (What Features Represent?).*
 
 **6. What is a keypoint?**
-A keypoint is a specific, distinctive location in an image (e.g. a corner) that can be reliably found again in other images of the same scene. It usually stores position, scale and orientation, and is described by a **descriptor** vector used for matching.
-→ notes: `week-2/notes/01_feature_detection_harris_sift_orb.md`
+A keypoint is a **specific location (x, y) in an image that the algorithm identifies as distinctive and informative**: the "coordinates" of a feature such as a corner, blob or edge. In SIFT and ORB each keypoint stores **position (x, y), scale, orientation and response** (strength of detection). Keypoints serve as **anchors** for describing and matching images.
+*Source: W2-KC (What are Keypoints?).*
 
 **7. State one advantage of ORB over SIFT.**
-ORB is much **faster** (it uses the FAST detector and binary BRIEF descriptors compared with Hamming distance), which suits real-time and mobile applications. It is also **free to use**: SIFT was patented until 2020.
-→ notes: `week-2/notes/01_feature_detection_harris_sift_orb.md`
+ORB is **free, fast and efficient**, and suitable for real-time tasks. SIFT is **computationally heavy** and was historically patented (now free in OpenCV ≥ 4.4). ORB is also rotation invariant.
+*Source: W2-KC; W2-Lab 1.*
 
 **8. What does pooling achieve in CNNs?**
-Pooling **downsamples** feature maps (e.g. 2×2 max pooling halves height and width). It reduces computation and parameters in later layers, enlarges the receptive field, and gives some **translation invariance** (a feature still counts even if it shifts slightly).
-→ notes: `week-2-3/notes/01_building_blocks.md`
+Pooling **down-samples feature maps by summarising regions** (max pooling keeps the strongest feature; average pooling smooths). It:
+- reduces computation and dimensionality;
+- provides **translation invariance** (robust to small shifts);
+- controls overfitting.
+
+*Source: W2-KC (Pooling; What Pooling Does?).*
 
 **9. Define ReLU and explain its purpose.**
-ReLU (Rectified Linear Unit): **f(x) = max(0, x)**. It adds non-linearity so the network can learn complex patterns. Its gradient is 1 for positive inputs, which reduces the vanishing-gradient problem of sigmoid/tanh, and it is cheap to compute, so it speeds up training.
-→ notes: `week-2-3/notes/01_building_blocks.md`
+**ReLU (Rectified Linear Unit):** if the input is positive, keep it; if negative, output zero. Negative values are "cut off" and positives pass through. Purpose:
+- it introduces **non-linearity** so networks can learn complex patterns;
+- it is **faster and simpler** than sigmoid or tanh;
+- it **helps reduce the vanishing gradient problem**.
+
+It was one of AlexNet's innovations (faster training).
+*Source: W3-KC (ReLU and Dropout).*
 
 **10. What is dropout and why is it used?**
-Dropout randomly switches off a fraction p of neurons (e.g. 50%) on each training step, and turns them all back on at test time. It prevents neurons from relying on each other (co-adaptation), acts like training an ensemble of thinner networks, and so **reduces overfitting**.
-→ notes: `week-2-3/notes/01_building_blocks.md`
+Dropout is a **regularisation technique to prevent overfitting**. It **randomly "drops" (sets to zero) a fraction of neurons during training**, which forces the network to learn robust features instead of memorising, reduces reliance on specific neurons, and **improves generalisation**.
+*Example:* with 10 neurons and dropout rate 0.3, about 3 neurons are ignored in each training pass.
+*Source: W3-KC.*
 
 **11. State one key contribution of LeNet.**
-LeNet-5 (Yann LeCun, 1998) was among the first successful CNNs. It introduced the **conv → pool → fully-connected** pattern with weight sharing and was used commercially to read **handwritten digits on bank cheques** (trained on MNIST).
-→ notes: `week-2-3/notes/02_classic_cnns_lenet_alexnet_vgg.md`
+LeNet (1998, **Yann LeCun**, digit recognition on MNIST) was the **first proof that CNNs outperform traditional ML methods (like SVMs) for images**. It inspired early adoption in handwriting recognition and banking systems. Architecture: Convolution → Pooling → Fully Connected.
+*Source: W3-KC.*
 
 **12. What does "compound scaling" mean in EfficientNet?**
-Scaling a network's **depth, width and input resolution together** by fixed ratios (controlled by one coefficient φ), instead of enlarging only one dimension. This gives better accuracy for the same compute.
-→ notes: `week-2-3/notes/03_modern_cnns_resnet_efficientnet.md`
+Compound scaling **scales depth, width and resolution systematically using a single formula** (balanced scaling across dimensions), instead of scaling them unevenly. It achieves high accuracy with fewer parameters.
+*Source: W3-KC (EfficientNet).*
 
 **13. Define viewpoint variation in computer vision.**
-Viewpoint variation is the change in an object's appearance when it is seen from different angles or positions (front vs side vs top). The same object can produce very different pixel patterns, so a recogniser must identify it regardless of camera angle.
+⚠ *"Viewpoint variation" is not defined as a term in your course files.* The closest material:
+- Day 2 lists **perspective transformation** as "warping viewpoint";
+- stereo vision uses "two images from slightly different viewpoints";
+- features must be **repeatable**: "the same feature should be detectable even if the image changes (scale, rotation, lighting)";
+- Haar cascades work for **frontal** faces and are sensitive to **pose**.
+
+From these: viewpoint variation is when the same object looks different because it is seen from a different angle/perspective, so detectors need features that stay repeatable under such changes.
+*Source: D1-3; W1-KC; W2-KC.*
 
 **14. What is occlusion, and why is it challenging?**
-Occlusion happens when part of an object is hidden behind another object (a pedestrian behind a car). It is challenging because the visible evidence is incomplete: key features may be missing, and detectors and trackers can miss or mislabel the object.
+Occlusion means the **object is hidden**: the KLT tracker "struggles with occlusion (object hidden)". It's challenging because the hidden object can't be seen. The course lists it as a challenge for **object tracking** ("occlusion, scale changes, multiple objects, cluttered backgrounds"), for **optical flow** ("sensitive to lighting changes and occlusions"), and for **Haar face detection** ("sensitive to lighting, pose, and occlusion").
+*Source: W2-KC; W1-KC; W2-Lab 3.*
 
 **15. Define a GAN in simple terms.**
-A Generative Adversarial Network is **two neural networks that compete**. A **Generator** creates fake data (e.g. images) from random noise, and a **Discriminator** tries to tell real data from fakes. As each improves against the other, the generator learns to produce realistic new samples.
-→ notes: `week-4-gans/notes/01_gan_basics.md`
+**GAN = Generative Adversarial Network:**
+- **Generative:** it creates new data (new images, not labels);
+- **Adversarial:** it learns through a contest between two opponents;
+- **Network(s):** both players are neural networks trained with backpropagation.
+
+A **Generator** turns random noise into fake images, and a **Discriminator** judges real vs fake. Each one's improvement forces the other to improve.
+*Source: GAN-1 (slides 6, 12–14).*
 
 **16. What dataset is used in the notebook?**
-**MNIST**: 60,000 training images of handwritten digits (0–9), each 28 × 28 grayscale, loaded with `torchvision.datasets.MNIST` and normalised to [−1, 1].
-→ notes: `week-4-gans/notes/01_gan_basics.md`
+**MNIST** (Modified National Institute of Standards and Technology): handwritten digits 0–9. It has 70,000 images (60,000 train + 10,000 test), each **28 × 28 = 784 pixels**, greyscale 0–255, 10 classes. The notebook loads `datasets.MNIST(root='./data', train=True, ...)` with batch size 64.
+*Source: GAN-1 (slides 46, 49).*
 
 **17. What is the input to the Generator?**
-A **random noise vector z** of 100 numbers drawn from a standard normal distribution, `torch.randn(batch_size, 100)`. All the variety in the generated images comes from z (the latent space).
+A **random noise vector z of 100 numbers**, `torch.randn(batch_size, 100)`: "a random vector, not a photo, not a label". The space z lives in is the **latent space**.
+*Source: GAN-1 (slides 21, 22, 25).*
 
 **18. What does the Discriminator output?**
-A **single probability between 0 and 1** (via a Sigmoid) that the input image is **real**. Close to 1 means "real", close to 0 means "fake".
+**One number: P(real)**, a probability between 0 and 1 produced by a **Sigmoid**. Near 1 = "I'm fairly sure this is real"; near 0 = "fake".
+*Source: GAN-1 (slides 27, 30).*
 
 **19. Why do we usually keep only the Generator after training?**
-The goal is to **generate new data**, and only the Generator does that. The Discriminator was a training tool: its job was to provide a learning signal to the Generator. Once training ends, generation just needs noise → G(z).
+The Generator **makes the images**, while D is "usually discarded". D's job was to **push G to improve** during training: "opponents during training, but partners in the result". After training, **only G is needed**: new noise → brand-new digits.
+*Source: GAN-1 (slides 16, 31, 50).*
 
 ---
 
 ## Medium answers (20–38)
 
 **20. Explain the role of Hue, Saturation, and Value in color representation.**
-HSV describes color the way humans think about it:
-- **Hue (H):** the color type, as an angle on the color wheel (0° red, 120° green, 240° blue; in OpenCV 0–179).
-- **Saturation (S):** the purity or intensity of the color, from grey (0) to vivid (255).
-- **Value (V):** brightness, from black (0) to full brightness (255).
+HSV is a way of representing colours **closer to how humans perceive them** than RGB:
+- **Hue (H):** the **type of colour** (red, green, blue…), measured as an **angle on a colour wheel** (0° = red, 120° = green, 240° = blue).
+- **Saturation (S):** **how intense or pure** the colour is: 0% = completely grey, 100% = fully vivid.
+- **Value (V):** the **brightness**: 0% = black, 100% = the brightest version of the hue.
 
-Because **color (H) is separated from brightness (V)**, a red object stays roughly the same hue in sun or shadow. That makes HSV ideal for color-based detection with `cv2.inRange`.
-→ notes: `week-1/notes/day1_images_and_colors.md`
+Separating colour into these intuitive parts makes HSV useful for **colour detection, segmentation and image editing**. E.g. ripe fruit can be detected by isolating the hue range for "yellow" or "red" **without worrying about brightness changes**. Conversion: `cv2.cvtColor(img, cv2.COLOR_BGR2HSV)`.
+*Source: W1-KC (HSV); D1-3.*
 
 **21. What is the purpose of a kernel in image processing?**
-A kernel (filter or mask) is a small matrix (e.g. 3×3) that slides over the image. At each position it multiplies its values with the pixels underneath and sums the products to form the output pixel. Different kernels perform different operations:
-- averaging or Gaussian kernels **blur** and remove noise;
-- sharpening kernels enhance detail;
-- Sobel/Laplacian kernels **detect edges**;
-- in CNNs, kernels are **learned** feature detectors.
-→ notes: `week-1/notes/day3_filtering_and_convolution.md`
+A kernel (also called a filter, mask or convolution matrix) is a **small matrix (3×3, 5×5, 7×7) that slides over an image to modify it**: to blur, sharpen or detect edges. It **determines how pixel values are weighted and combined during convolution**:
+1. place the kernel over a pixel and its neighbours;
+2. multiply each kernel value by the pixel under it;
+3. sum the results → the new pixel value.
+
+**Examples:**
+- identity [0 0 0; 0 1 0; 0 0 0] leaves the image unchanged;
+- box blur (1/9 of all ones) smooths;
+- sharpen [0 −1 0; −1 5 −1; 0 −1 0] enhances edges and fine details;
+- Sobel X [−1 0 1; −2 0 2; −1 0 1] finds vertical edges, and Sobel Y finds horizontal edges.
+
+Larger kernels capture more context but are slower. Kernels matter for **feature extraction, image enhancement**, and in **CNNs they are learned automatically**.
+*Source: W1-KC (What is a Kernel?).*
 
 **22. How does histogram equalization enhance image contrast?**
-It **redistributes pixel intensities** so they spread over the full 0–255 range. Each intensity is mapped through the **cumulative distribution function (CDF)** of the histogram: new = round(CDF(old) × 255). Crowded intensity ranges get stretched apart, so a dull, low-contrast image (histogram squeezed into a narrow band) becomes clearer, with a roughly flat histogram. OpenCV: `cv2.equalizeHist(gray)`. **CLAHE** does it locally per tile, to avoid amplifying noise.
-→ notes: `week-1/notes/day4_histograms_and_thresholding.md`
+Your course covers this only at the level of histograms:
+- A histogram is a graph of **how many pixels have each intensity value** (x-axis 0–255, y-axis count).
+- It is used to **detect brightness and contrast levels** and to identify whether an image is **underexposed (too dark) or overexposed (too bright)**.
+- It is the "**basis for enhancement techniques like histogram equalization**".
+
+So histogram equalization is an enhancement technique that works on the image's intensity histogram to improve contrast.
+⚠ *Your course files name histogram equalization but do not explain how it works (no steps or formula).*
+*Source: W1-KC (Histograms); D4.*
 
 **23. Explain the concept of descriptors with examples.**
-A descriptor is a **numeric vector that describes the neighbourhood around a keypoint**, so the same point can be matched in another image.
-- **SIFT:** 128 numbers, histograms of gradient orientations in a 4×4 grid around the point. Robust to scale and rotation.
-- **ORB/BRIEF:** 256-bit binary strings from pixel-intensity comparisons. Very fast; matched with Hamming distance.
-- **HOG:** histograms of gradient directions over cells, used for whole-window description (pedestrians, faces).
+A descriptor **encodes the local neighbourhood around a detected keypoint into a numerical vector**. Two keypoints are a **match if their descriptors are similar**, so descriptors let features be compared across images. Detection finds the keypoints; description produces the descriptors.
+**Examples:**
+- **SIFT:** a 128-dimensional vector, robust to scale and rotation;
+- **ORB:** a binary string; fast, efficient, free;
+- **SURF:** 64 or 128 dimensions; faster than SIFT, but patented.
 
-Matching = finding descriptors with the smallest distance between two images.
-→ notes: `week-2/notes/01_feature_detection_harris_sift_orb.md`
+They're used in logo detection, object recognition and image retrieval.
+*Source: W2-KC (Feature Descriptors); W1-KC (SIFT, SURF); W2-Lab 2.*
 
 **24. How does FLANN improve feature matching efficiency?**
-Brute-force matching compares every descriptor with every other (O(N·M)), which is slow for thousands of features. **FLANN** (Fast Library for Approximate Nearest Neighbors) builds search structures such as **KD-trees** (for SIFT-type float descriptors) or **LSH** (for binary ORB descriptors) and finds **approximate** nearest neighbours much faster, with negligible accuracy loss. It's usually combined with **Lowe's ratio test** (keep a match only if best distance < 0.7–0.75 × second best) to discard ambiguous matches.
-→ notes: `week-2/notes/02_image_matching_flann_logo_detector.md`
+FLANN (Fast Library for Approximate Nearest Neighbours) is a library **optimised for fast matching of high-dimensional feature descriptors**.
+- **Pros:** efficient for large datasets; scales well with many features.
+- **Cons:** approximate, so it may miss exact matches; needs parameter tuning.
+- It is combined with **Lowe's ratio test** to filter weak or ambiguous matches. In the lab: `matches = flann.knnMatch(des1, des2, k=2)`, keeping a match only if `m.distance < 0.7*n.distance`.
+- It is used in the **Logo Detector** mini-project: detect features → match with FLANN → ratio test → homography → bounding box.
+
+*Source: W2-KC (FLANN); W2-Lab 2.*
 
 **25. What is the role of RANSAC in robust estimation?**
-RANSAC (Random Sample Consensus) fits a model, such as a **homography**, from data that contains many **outliers** (wrong matches). It repeats:
-1. pick a minimal random sample (4 matches for a homography);
-2. fit the model;
-3. count **inliers** that agree within a threshold.
+RANSAC is a **robust estimation method to handle outliers in matches**. When estimating a **homography** (the transformation mapping one image plane to another), some feature matches are wrong. RANSAC makes the estimate robust to them. The course uses it in:
+- **panorama stitching:** detect ORB features → match → estimate homography → warp and stitch;
+- the **logo detector:** FLANN matches → homography → box around the logo.
 
-It keeps the model with the most inliers and refits it on all of them. Wrong matches therefore can't distort the result. Used in image stitching, logo/object localisation and pose estimation (`cv2.findHomography(..., cv2.RANSAC, 5.0)`).
-→ notes: `week-2/notes/02_image_matching_flann_logo_detector.md`
+Code: `M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)`.
+⚠ *Your course files do not describe RANSAC's internal steps; they only give its role and the OpenCV call.*
+*Source: W2-KC; W2-Lab 1, 2.*
 
 **26. Explain the concept of skip connections in ResNet.**
-A skip (residual) connection **adds a block's input directly to its output: y = F(x) + x**.
-- The layers only need to learn the **residual** F(x) = desired − x. Learning "no change" is easy (F = 0), so extra layers can't make the network worse.
-- During backpropagation the gradient flows through the "+x" path unchanged, which **prevents vanishing gradients**.
+ResNet (2015) solved the problem that training very deep networks led to **vanishing gradients** (weights stopped updating). It introduced **residual (skip) connections**, which bypass layers and feed the input to a later layer:
+- the network **learns residuals (differences) instead of direct mappings**;
+- skip connections **let gradients flow more easily** through the layers.
 
-This let ResNet train very deep networks (152 layers) and solved the **degradation problem** (deeper plain nets having higher training error).
-→ notes: `week-2-3/notes/03_modern_cnns_resnet_efficientnet.md`
+**Impact:** networks of **50, 101, even 152 layers** became trainable, with state-of-the-art ImageNet performance. Application: medical imaging.
+*Source: W3-KC (ResNet; skip connections).*
 
 **27. How does YOLO differ from R-CNN in object detection?**
 
-| | R-CNN | YOLO |
+| | R-CNN (2014) | YOLO (2016) |
 |---|---|---|
-| approach | **two-stage**: ~2,000 region proposals (selective search), then a CNN classifies each | **one-stage**: one CNN pass predicts boxes + classes for a grid over the whole image |
-| speed | very slow (seconds per image) | real-time (tens of frames per second) |
-| accuracy | high localization accuracy | slightly lower, weaker on small, crowded objects |
-| context | sees regions in isolation | sees the whole image at once (fewer background errors) |
+| process | 1. generate region proposals; 2. run a CNN on **each** region; 3. classify and refine boxes | treats detection as **a single regression problem**: boxes + class probabilities in **one forward pass** |
+| strength | **high accuracy** | **real-time** performance |
+| weakness | **very slow**: thousands of regions per image | less accurate for **small objects** |
+| contribution | first major CNN-based detector | made detection practical for real time (self-driving cars) |
+| best for | medical imaging (accuracy > speed) | autonomous driving (speed > accuracy) |
 
-→ notes: `week-2-3/notes/04_object_detection_rcnn_yolo_ssd.md`
+*Source: W3-KC (Object Detection Architectures).*
 
 **28. What is the role of the encoder and decoder in U-Net?**
-- **Encoder** (contracting path): convolution + pooling layers that **downsample**, capturing *what* is in the image (context and semantics) while losing spatial detail.
-- **Decoder** (expanding path): **upsampling** (transposed convolution) layers that restore the resolution to produce a **pixel-wise segmentation mask** (*where*).
-- **Skip connections** copy encoder feature maps to the matching decoder level, so fine boundaries are recovered precisely. That's why U-Net excels in medical image segmentation.
+- **Encoder (downsampling path):** gradually reduces spatial resolution using **convolution + pooling**, capturing **context and high-level features**: it learns **what** is in the image ("this region looks like a tumour"). Analogy: compressing a photo into a summary.
+- **Decoder (upsampling path):** gradually increases resolution back to the original size using **transposed convolutions or upsampling**, reconstructing **pixel-level predictions**: it learns **where** things are.
+- **Skip connections** bridge the two: they combine low-level fine detail with high-level context, giving precise boundaries.
 
-→ notes: `week-2-3/notes/05_segmentation_fcn_unet_mask_rcnn.md`
+"Encoder compresses for context, decoder reconstructs for precision." U-Net is the standard in medical image segmentation.
+*Source: W3-KC (U-Net; Encoder; Decoder).*
 
 **29. Explain how histogram equalization helps with illumination changes.**
-Under dim or uneven lighting, intensities crowd into a narrow band: dark images cluster near 0, washed-out images near 255. Equalization spreads them across the full range using the CDF, which **normalises brightness and contrast**, so images of the same scene under different lighting look more alike. This makes edges, features and thresholds work more consistently.
-**CLAHE** (adaptive, per-tile, with a clip limit) handles **uneven** lighting better (e.g. a shadow over half a face), because global equalization uses one mapping for the whole image.
-→ notes: `week-1/notes/day4_histograms_and_thresholding.md`
+What your course provides:
+- **Histograms** reveal brightness and contrast problems (under- or over-exposure), and are the basis for **histogram equalization** as an enhancement technique.
+- For **varying illumination**, the course's tool is **adaptive thresholding**: "threshold value is calculated for smaller regions; useful for images with varying illumination", as opposed to one global cutoff.
+- Among features, **HOG** is "robust to illumination changes", and **SIFT** "handles changes in scale, rotation, and illumination".
+
+⚠ *Your course files do not explain how histogram equalization handles illumination changes; only the items above are covered.*
+*Source: W1-KC; D4; W2-KC.*
 
 **30. Explain why normalization of MNIST images is important for GAN training.**
-The images are normalised from [0, 1] to **[−1, 1]** with `Normalize((0.5,), (0.5,))`, because:
-1. **It matches the Generator's Tanh output range (−1 to 1).** If real and fake pixels lived in different ranges, the Discriminator could spot fakes just by their value range, and G would learn nothing useful.
-2. **Zero-centred inputs give stabler, better-scaled gradients**, which matters a lot in the delicate two-player training.
+The notebook transforms each image with:
+1. `ToTensor()`: pixels 0–255 → **0.0–1.0**;
+2. `Normalize((0.5,), (0.5,))`: (v − 0.5)/0.5 → **−1 to +1**. E.g. pixel 204 → 0.8 → +0.6; pixel 0 → −1.0.
+
+This matches the range of the **Generator's Tanh output (−1…1)**: "Tanh squashes outputs to −1…1, the same range as the real images after Normalize". Real and fake images therefore live in the same value range.
+*Source: GAN-1 (slides 25, 47, 49).*
 
 **31. Describe the two steps in each training round (update D, update G).**
-Every mini-batch runs two steps:
-1. **Update D** (learn to tell real from fake):
-   - real images → D → BCE loss with target **1** (`labels_real`);
-   - noise → G → fakes → D (with fakes **detached**, so G isn't updated) → BCE loss with target **0** (`labels_fake`);
-   - `loss_D = loss_real + loss_fake`, then backprop and step `optimizer_D`.
-2. **Update G** (learn to fool D): new fakes → D → BCE with target **1** (`labels_real`): G wants D to call its fakes real. Backprop through D into G and step **only `optimizer_G`**.
+Every mini-batch plays one round in two steps:
+- **Step 1: train the inspector (D); G is frozen.**
+  - Real batch → D → BCE loss with **target 1** (`labels_real`): penalise D if it calls real images fake.
+  - Noise → G → fakes → D with **`fake.detach()`** → **target 0** (`labels_fake`): penalise D if it calls fakes real.
+  - `loss_d = loss_real + loss_fake`, then `loss_d.backward(); optimizer_d.step()`.
+  - `.detach()` cuts the wire back to G and only `optimizer_d` steps, so this step changes **only D's weights**.
+- **Step 2: train the forger (G); D is not updated.**
+  - The same fakes **without detach** → D → BCE with **target 1** (`labels_real`): "loss is low when D is fooled".
+  - Gradients flow **through D back into G**, and only `optimizer_g` steps.
+
+*Source: GAN-1 (slides 33–35).*
 
 **32. What is the role of random noise vectors in generating new images?**
-The noise vector z (100 random numbers from N(0, I)) is the **seed** of each image. The Generator is a deterministic function, so **all the variety comes from z**: different z gives a different digit, and the same z always gives the same digit. During training, G learns to map the simple noise distribution onto the complex distribution of real images. After training, sampling new z gives endless new images. Nearby points in this **latent space** give similar images.
+The noise vector z is **the source of variety**: "Different z, different flower". **G is deterministic, and all the randomness comes from z.** Sampling z is easy (`torch.randn(64, 100)`), and G learns to map this simple cloud of points onto the complicated set of real images. The space z lives in is the **latent space**.
+- Re-running the plotting with new noise gives **different digits without retraining**.
+- Keeping one fixed noise vector (`fixed_noise`) and plotting `G(z_fixed)` each epoch is "the best way to watch a GAN learn".
+- **Walking from z1 to z2** changes the digit smoothly (Task 4).
+
+*Source: GAN-1 (slides 22, 23, 51, 53, 54).*
 
 **33. Describe the mathematical operation of convolution and its role in feature extraction.**
-2-D convolution slides a kernel K over the image I. At each position it multiplies and sums:
+Convolution is **a mathematical operation where a small matrix (kernel) slides over the image, multiplying and summing pixel values to produce a new output**:
 
-**G(x, y) = Σᵢ Σⱼ I(x + i, y + j) · K(i, j)**
+**(I * K)(x, y) = Σₘ Σₙ I(x − m, y − n) · K(m, n)**, where I is the image and K the kernel.
 
-(Strictly, convolution flips the kernel; CNNs use this unflipped version, called cross-correlation.) The output feature map is large where the image patch **resembles the kernel's pattern**.
-- With a Sobel kernel [−1 0 1; −2 0 2; −1 0 1] the output highlights **vertical edges**.
-- In CNNs, kernel values are **learned**: early layers learn edges and colors, middle layers textures and parts, deep layers whole objects.
-- **Weight sharing** (one kernel for the whole image) keeps the parameter count small and makes features **translation-equivariant**.
+- The sliding window computes a **weighted sum**, producing a **feature map** that highlights patterns. Convolution is a **"sliding dot product"**.
+- **Role in feature extraction:** it extracts edges, textures and smoothness (blur kernel → smoothing; edge kernel → boundaries; sharpen → fine detail).
+- In **CNNs**, the filters are learned: **early layers → edges, corners, textures; deeper layers → shapes, objects, semantic features**. Convolutions **preserve spatial locality** and **reduce parameters** compared with fully connected layers.
+- It is "the foundation of CNNs".
 
-Output size = (W − K + 2P)/S + 1.
-→ notes: `week-1/notes/day3_filtering_and_convolution.md`, `week-2-3/notes/01_building_blocks.md`
+*Source: W1-KC (Convolution); D1-3; W2-KC (Convolutions; Feature Maps; Mathematics Foundations).*
 
 **34. Describe the difference between supervised and unsupervised learning with CV examples.**
-- **Supervised:** trained on **labelled** data (input → known answer) to predict labels for new inputs. CV examples: image classification (cat vs dog), object detection with labelled boxes (YOLO), segmentation with labelled masks (U-Net), digit recognition (MNIST with labels).
-- **Unsupervised:** **no labels**; it finds structure in the data. CV examples: **k-means clustering of SIFT descriptors** into visual words (Bag of Visual Words), image clustering, anomaly detection, and **GANs** learning to generate images from unlabelled data.
-- Key difference: supervised needs costly annotation and learns a mapping to known outputs; unsupervised needs no labels but its results are harder to evaluate.
 
-→ notes: `week-2/notes/04_ml_in_cv_knn_svm.md`
+| | Supervised | Unsupervised |
+|---|---|---|
+| data | **labelled** (inputs + correct outputs) | **unlabelled** (only inputs) |
+| goal | predict outcomes for new data | discover hidden patterns, groupings, structure |
+| techniques | classification, regression; kNN ("majority vote of neighbours"), SVM ("find the best dividing line") | clustering (k-means, hierarchical), dimensionality reduction (PCA, t-SNE), association |
+| output | a class label or numeric value | groups, clusters, reduced representation |
+| analogy | a teacher giving questions with answers | exploring a new city without a guide |
+
+**CV examples:**
+- **supervised:** handwritten digit recognition (MNIST) with kNN/SVM/CNN; object classification in photos; medical image analysis;
+- **unsupervised:** **organising large image collections**, and **clustering descriptors with k-means** into visual words (Bag of Visual Words).
+
+*Source: W2-KC (Machine Learning Fundamentals; BoVW).*
 
 **35. Describe how Vision Transformers use attention to capture global context.**
-- A ViT **splits the image into patches** (e.g. 16×16), flattens and linearly projects each into a token, adds **position embeddings**, and prepends a [CLS] token.
-- **Self-attention:** each patch makes a Query, Key and Value; attention weights = softmax(QKᵀ/√d), and each patch's new representation is a weighted mix of **all** patches' Values.
-- So from the **first layer** any patch can relate to any other (e.g. a dog's head to its tail across the image), whereas a CNN's receptive field grows only gradually through many layers.
-- Multi-head attention captures several kinds of relationships in parallel.
-- ViTs need large datasets (or pre-training), because they have fewer built-in assumptions (inductive biases) than CNNs.
+CNNs excel at spatial features but **struggle with long-range dependencies**. ViT applies the transformer's **attention mechanism** to images:
+- **Attention:** Query (what we're looking for), Key (what we have), Value (the information to retrieve). Compare Query with Keys → similarity scores → use the scores to weight the Values → the output is a **weighted sum**. This captures **long-range dependencies** (pixels far apart but related).
+- **Step 1:** split the image into **patches** (e.g. 16×16); each is flattened and embedded as a **token**, like a word in NLP.
+- **Step 2:** a **transformer encoder** processes the patch sequence with attention, learning **relationships across patches (global context)**.
+- **Step 3:** a special **classification token** summarises the image for the final class.
 
-→ notes: `week-2-3/notes/07_attention_and_vision_transformers.md`
+**Why patches give global context:**
+- attention can directly compare far-apart regions (top-left vs bottom-right; zebra stripes in different parts of the body);
+- patches reduce the sequence length;
+- each patch keeps local detail, while attention connects patches globally.
+
+*Source: W3-KC (Vision Transformers & Attention).*
 
 **36. Discuss how multi-scale feature extraction addresses scale variation in CNNs.**
-Objects appear at very different sizes (a near vs a far car), but a single feature map sees only one scale. Multi-scale methods look at several resolutions:
-- **Image pyramids:** run the detector on resized copies (as in classical Haar/HOG).
-- **Multi-scale feature maps:** **SSD** predicts from feature maps at several depths: early, high-resolution maps catch small objects; deep, coarse maps catch large ones.
-- **Feature Pyramid Networks (FPN):** combine deep semantic features with high-resolution shallow features through a top-down path plus lateral connections.
-- **Inception modules:** parallel 1×1, 3×3 and 5×5 filters in one layer.
-- **Anchor boxes** of multiple sizes and aspect ratios, and **dilated convolutions** (larger receptive field without downsampling).
+From your course:
+- **SSD** "uses **multiple feature maps at different scales**" and so "detects small and large objects simultaneously" (e.g. a small cat and a large cat in the same image). This is why it balances speed and accuracy across scales, in contrast to **YOLO**, which is less accurate for small objects.
+- **CNN feature hierarchies:** early layers capture edges and textures, deeper layers shapes and objects.
+- **Classical methods:** **SIFT** builds a **Gaussian scale space** and detects Difference-of-Gaussians extrema, so it is robust to scale. **Harris** is not invariant to scale, ORB is less robust for large scale changes, and HOG is sensitive to scale changes. Haar face detection scans multiple scales with `detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)`.
 
-Result: robust detection of both small and large objects.
-→ notes: `week-2-3/notes/04_object_detection_rcnn_yolo_ssd.md`
+*Source: W3-KC (SSD); W2-KC; W1-KC (SIFT, HOG); W2-Lab 6.*
 
 **37. Explain the minimax objective function of GANs.**
 
-**min_G max_D V(D, G) = E_{x~p_data}[log D(x)] + E_{z~p_z}[log(1 − D(G(z)))]**
+**min_G max_D  V(D, G) = E_x[ log D(x) ] + E_z[ log(1 − D(G(z))) ]**
 
-- **D maximises V:** it wants D(x) → 1 for real images (first term large) and D(G(z)) → 0 for fakes (second term large).
-- **G minimises V:** it can only affect the second term, and wants D(G(z)) → 1, making log(1 − D(G(z))) very negative.
-- It's a **zero-sum two-player game**: one player's gain is the other's loss.
-- At the optimum, p_g = p_data and **D(x) = ½ everywhere** (a Nash equilibrium).
-- In code it becomes binary cross-entropy: D trains with targets 1 (real) and 0 (fake); G trains with target 1 on its fakes (the non-saturating version, see Q57).
+- **Term 1 (real images):** the average of log D(x), largest (0) when D(x) = 1. **D maximises** it by saying "real" to real data. **G can't touch it.**
+- **Term 2 (fakes):** D maximises it by pushing **D(G(z)) → 0**; **G minimises** it by pushing **D(G(z)) → 1**.
+- **Minimax** = G minimises what the best D can maximise. It's a **zero-sum game**: D's gain is G's loss. Maximising V = minimising the notebook's `loss_d`.
+- **Where it settles:** the best D for a fixed G is **D\*(x) = p_data(x) / (p_data(x) + p_g(x))**; the best G gives **p_g = p_data → D\*(x) = ½**, a Nash equilibrium. Reference: loss_d = 2 ln 2 ≈ 1.386 and loss_g = ln 2 ≈ 0.693.
 
-→ notes: `week-4-gans/notes/01_gan_basics.md`
+*Source: GAN-1 (slides 38, 39); GAN-2-3.*
 
 **38. Discuss the three common problems in GAN training: mode collapse, instability, and D too strong.**
-1. **Mode collapse:** G finds a few outputs that fool D and produces only those (e.g. every sample is the same "8"), with little diversity. *Fixes:* minibatch discrimination, unrolled GANs, Wasserstein loss, changing the optimizer settings (our run was fixed by Adam β₁ = 0.5).
-2. **Instability / non-convergence:** the losses oscillate and never settle, because each network trains against a **moving target**. *Fixes:* lower learning rates, Adam(β₁ = 0.5), DCGAN design rules (BatchNorm, LeakyReLU, strided convolutions), spectral normalisation.
-3. **D too strong:** D separates real from fake almost perfectly, D(G(z)) ≈ 0, so the original G loss log(1 − D(G(z))) **saturates** and G gets **vanishing gradients** and stops learning. *Fixes:* the non-saturating G loss, label smoothing (real target 0.9), adding noise to D's inputs, a smaller or less-trained D, WGAN.
+1. **Mode collapse:** G finds one output that fools D and produces only that: every z gives the same kind of output. It looks good but has no variety (e.g. all samples are the digit "1"; in the ring data 1,000 samples landed in one region).
+   - *Why:* D judges one sample at a time; G optimises against today's D; nothing rewards spreading out.
+   - *Kinds:* complete, partial, within a mode, hopping.
+   - *Detect:* sample grids, fixed-noise grids, class histograms.
+   - *Fix:* minibatch std / minibatch discrimination.
+2. **Instability / non-convergence:** "G fixes one weakness, D learns a new check, G switches trick, D switches back…": the players **chase each other in circles** instead of settling at 0.5.
+   - *Symptoms:* oscillating losses, quality going backwards, one player winning outright, fragile settings.
+   - *Causes:* gradient play circles the equilibrium; Adam momentum (β1 = 0.9) overshoots.
+   - *Fixes:* Adam β1 = 0.5, a lower learning rate.
+3. **D too strong:** D rejects every fake with total confidence: D(x) ≈ 1, D(G(z)) ≈ 0.
+   - A perfect D is flat around the fakes, so **G's gradient vanishes** and G stops learning (vanishing gradient problem). "Balance matters."
+   - *Fixes:* non-saturating G loss, one-sided label smoothing (real target 0.9), instance noise, WGAN-GP.
 
-**Tip:** losses alone don't show quality; watch a fixed-noise image grid every epoch.
-→ notes: `week-4-gans/notes/02_gan_training_dynamics.md`
+**Rule:** losses alone don't show quality; always look at the images.
+*Source: GAN-1 (slides 41, 55); GAN-2-3 (sections 03–05).*
 
 ---
 
 ## Long answers (39–57)
 
 **39. Explain the process of thresholding and its types with examples.**
-**Thresholding** converts a grayscale image into a **binary** image (foreground and background) by comparing each pixel with a threshold T: pixel > T → 255 (white), else → 0 (black). It's the simplest form of segmentation: separating objects from the background before finding contours or measuring.
+**Definition:** thresholding **converts a grayscale image into a binary (black-and-white) image by setting a cutoff value**:
+- pixel intensity **> threshold → white (255)**;
+- pixel intensity **≤ threshold → black (0)**.
+
+It simplifies images into binary form for easier analysis (e.g. before finding contours).
 
 **Types:**
-1. **Simple (global) thresholding:** one fixed T for the whole image. `cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)`. Variants: `THRESH_BINARY_INV` (inverted), `THRESH_TRUNC` (values above T are capped at T), `THRESH_TOZERO` (values below T become 0), `THRESH_TOZERO_INV`. *Example:* scanned black text on white paper.
-2. **Otsu's thresholding:** chooses T **automatically** by maximising the between-class variance of the histogram. Best for **bimodal** histograms. `cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)`. *Example:* coins on a uniform table.
-3. **Adaptive thresholding:** computes a **separate T for each neighbourhood** (mean or Gaussian-weighted mean of a block, minus a constant C), so it handles **uneven illumination**. `cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)`. *Example:* a document photographed with a shadow across it, or reading a whiteboard.
-4. **Color (range) thresholding:** keep pixels inside a range per channel, usually in HSV: `cv2.inRange(hsv, lower, upper)`. *Example:* detecting a red ball or ripe fruit.
+1. **Global thresholding:** a single threshold for the whole image.
+   `_, thresh_global = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)`
+2. **Adaptive thresholding:** the threshold is calculated for **smaller regions** (different cutoffs for different regions), useful when **lighting/illumination varies**.
+   `cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)`
+3. **Otsu's method:** **automatically calculates the optimal threshold**, by **minimising intra-class variance**.
+   `_, thresh_otsu = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)`
 
-**Pre-processing tips:** blur first (Gaussian) to reduce noise; follow with morphology (opening/closing) to clean the mask.
-**Applications:** document binarization/OCR, medical imaging (separating tumours or bone in X-rays), industrial inspection, object counting, licence-plate reading.
-**Limitation:** global thresholds fail with uneven lighting or overlapping intensity distributions; use adaptive, Otsu or CLAHE then.
-→ notes: `week-1/notes/day4_histograms_and_thresholding.md`
+**Examples and applications:**
+- **document scanning/binarisation**: the Day 4 mini-project **Document Binarizer** produces a clean binary version of a scanned document using Otsu;
+- **medical imaging**: tumour segmentation;
+- **industrial inspection**: defect detection;
+- **object detection**: separating foreground from background.
+
+The Day 4 lab compares global, adaptive and Otsu on the same image.
+*Source: W1-KC (Thresholding); D4.*
 
 **40. Discuss morphological operations (dilation, erosion, opening, closing) with diagrams and applications.**
-Morphological operations process the **shape** of binary (or grayscale) images using a small **structuring element** (kernel), e.g. a 3×3 square, a cross or an ellipse.
+Morphological operations focus on the **shape and structure** of objects, especially in **binary** images (they can also be applied to grayscale). They use a **structuring element**: a small binary matrix (rectangle, ellipse or cross) that probes the image. **Its size determines the effect**, e.g. `kernel = np.ones((5,5), np.uint8)`.
 
-- **Erosion:** a pixel stays white only if **all** pixels under the kernel are white. Objects **shrink**, thin bridges break, small white noise disappears.
-- **Dilation:** a pixel becomes white if **any** pixel under the kernel is white. Objects **grow**, small holes and gaps fill, broken parts join.
-- **Opening = erosion then dilation:** removes small **white specks** (salt noise) while keeping the main shapes' size.
-- **Closing = dilation then erosion:** fills small **black holes** and gaps inside objects, and joins nearby parts.
+1. **Dilation:** **expands white regions**; connects broken parts, fills gaps in text characters. `cv2.dilate(img, kernel, iterations=1)`
+2. **Erosion:** **shrinks white regions**; removes small noise, thins lines, removes stray dots. `cv2.erode(img, kernel, iterations=1)`
+3. **Opening = erosion followed by dilation:** **removes small noise while keeping the main shapes intact** (e.g. cleaning scanned documents). `cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)`
+4. **Closing = dilation followed by erosion:** **fills small holes inside objects** (e.g. gaps in letters or shapes). `cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)`
 
-**Diagram** (□ = background, ■ = foreground, 3×3 kernel):
+**Diagram** (■ = white/foreground):
 ```
-Original        Erosion         Dilation
-□□□□□□□         □□□□□□□         □■■■■■□
-□■■■■■□         □□□□□□□         ■■■■■■■
-□■■■■■□   →     □□■■■□□   /     ■■■■■■■
-□■■■■■□         □□□□□□□         ■■■■■■■
-□□□□□□□         □□□□□□□         □■■■■■□
+Original      Dilation (thicker)   Erosion (thinner)
+  ■■■             ■■■■■                 ·
+  ■■■     →       ■■■■■          →      ■
+  ■■■             ■■■■■                 ·
 
-Opening: specks ■ around a shape vanish, the shape stays.
-Closing: holes □ inside a shape fill in, the outline stays.
+Opening:  ■■■  ·  (speck)   →  ■■■        tiny speck erased, shape kept
+Closing:  ■ · ■  (gap)      →  ■■■        tiny gap filled, shape kept
 ```
-**Others:** morphological **gradient** (dilation − erosion = outline), **top-hat** (original − opening = small bright details).
+**Course analogy (marker and eraser):** dilation = thicker strokes; erosion = thinner strokes; opening = erasing tiny specks; closing = filling tiny gaps.
 
 **Applications:**
-- cleaning noisy scanned documents (opening removes specks, closing repairs broken letters);
-- separating touching objects before counting (erosion);
-- filling holes in segmentation masks (closing);
-- extracting boundaries (gradient);
-- medical imaging (cells, blood vessels);
-- industrial crack and defect detection;
-- fingerprint enhancement.
+- document processing (remove noise, enhance text readability);
+- medical imaging (highlight cells or tissues);
+- industrial inspection (detect defects);
+- object detection (clean up shapes before contour analysis).
 
-**Structuring element size:** a small kernel gives gentle changes; a large one removes more noise but can destroy details or merge objects.
-→ notes: `week-1/notes/day5_morphological_operations.md`
+Day 5 mini-project **Noise Removal in Scanned Documents:** opening, then closing, with a 3×3 kernel.
+*Source: W1-KC (Morphological Operations); D5.*
 
 **41. Explain Harris Corner Detection: method, pros, cons, and applications.**
-**Idea:** a **corner** is a point where shifting a small window in **any** direction changes the intensity a lot. On a flat region nothing changes; on an edge, change happens only across the edge.
+- **Concept:** corners are **points where intensity changes in multiple directions** (where edges meet). They are **repeatable and uniquely localizable**, unlike flat patches or edges (sliding along an edge looks similar).
+- **Method:** uses **gradient information to compute a "corner response" score**. In the lab: `dst = cv2.cornerHarris(gray, 2, 3, 0.04)`, and the corners are marked as **red dots**.
+- **Pros:** simple and effective for detecting corners; good for **rigid structures** (buildings, checkerboards).
+- **Cons:** **not invariant to scale or rotation**; sensitive to image transformations. "Harris finds corners but misses scale/rotation changes."
+- **Applications:** image matching, tracking, **panorama stitching**, object recognition.
+- Other corner detectors named in the course: FAST, Shi-Tomasi.
 
-**Method:**
-1. Compute image gradients Iₓ and I_y (e.g. Sobel).
-2. For each pixel, build the **structure tensor** M over a window: M = Σ w(x, y) [[Iₓ², IₓI_y], [IₓI_y, I_y²]].
-3. Compute the **corner response R = det(M) − k·(trace M)²**, with k ≈ 0.04–0.06 (det = λ₁λ₂, trace = λ₁ + λ₂ of M's eigenvalues).
-4. Interpret:
-   - R large and positive (both λ large) → **corner**;
-   - R negative (one λ large) → **edge**;
-   - |R| small → **flat** region.
-5. Threshold R and apply **non-maximum suppression** to keep the strongest corners.
-
-OpenCV: `cv2.cornerHarris(gray_float32, blockSize=2, ksize=3, k=0.04)`.
-
-**Pros:** simple and fast; **rotation-invariant** (eigenvalues don't change with rotation); fairly robust to small illumination changes and noise; accurate corner localisation.
-**Cons:** **not scale-invariant** (a corner at one scale looks like an edge when zoomed in); sensitive to the choice of k, window size and threshold; produces **no descriptor**, so matching needs another method; struggles with noise and blur.
-
-**Applications:** image stitching (panoramas), motion tracking and optical flow (Shi–Tomasi "good features to track" is a variant), camera calibration (chessboard corners), 3-D reconstruction, object recognition.
-→ notes: `week-2/notes/01_feature_detection_harris_sift_orb.md`
+⚠ *Your course files do not give the mathematical formula for the corner response.*
+*Source: W1-KC (Corner Detection); W2-KC (Harris); W2-Lab 1.*
 
 **42. Discuss the role of convolution, pooling, and activation functions in CNNs with examples.**
-A CNN repeats **conv → activation → pool** blocks, then flattens into fully-connected layers that output class scores.
+CNNs are neural networks specialised for images that **automatically learn spatial hierarchies of features**. Data flow: **Input → Convolution → Pooling → Flatten → Fully Connected → Output**.
 
-1. **Convolution layers: feature extraction.**
-   - Learned kernels slide over the input and produce **feature maps** that respond to specific patterns.
-   - **Weight sharing** (the same kernel everywhere) needs far fewer parameters than fully-connected layers and finds a pattern anywhere in the image.
-   - *Example:* 32 filters of 3×3 on a 28×28 MNIST image produce 32 feature maps detecting edges at different angles. Deeper layers combine them: edges → corners and textures → digit parts → whole digits.
-2. **Activation functions: non-linearity.**
-   - Without them, stacked convolutions collapse into one linear operation.
-   - **ReLU** f(x) = max(0, x) is the default: fast, sparse, and it reduces vanishing gradients.
-   - *Example:* after convolution, ReLU keeps only positive edge responses. **Softmax** at the output turns scores into class probabilities (digit 7: 0.92).
-3. **Pooling layers: downsampling.**
-   - **Max pooling** (2×2, stride 2) keeps the strongest response in each window and halves the height and width.
-   - It reduces computation and parameters, enlarges the receptive field, and adds **translation invariance** (a slightly shifted edge still gives the same max).
-   - *Example:* 28×28 → 14×14 → 7×7 in LeNet-style nets. **Global average pooling** replaces large fully-connected layers in modern nets.
+1. **Convolution:**
+   - **Role:** applies small filters (kernels) across the image to **detect local patterns**. Each filter produces a **feature map**: a 2D grid of how strongly it responds in each region.
+   - **What it captures:** early layers → edges, corners, textures; deeper layers → shapes, objects, semantic features.
+   - **Benefit:** **fewer parameters** than fully connected layers; preserves spatial locality.
+   - **Stride** controls the step size; **padding** (usually zeros) prevents shrinking and lets filters cover edge pixels.
+2. **Pooling:**
+   - **Role:** **down-samples feature maps** by summarising regions. **Max pooling** keeps the strongest feature; **average pooling** smooths.
+   - **Benefits:** reduces computation; gives **translation invariance**; controls overfitting.
+3. **Activation functions:**
+   - **Role:** introduce **non-linearity** so the network can learn complex patterns. Without them CNNs "would behave like linear models".
+   - **ReLU:** fast, effective, widely used. **Sigmoid:** 0 to 1, for probabilities. **Tanh:** −1 to 1.
 
-**Together:** convolution finds patterns, activation lets them combine non-linearly, pooling summarises and compacts them. Stacking the blocks builds a hierarchy from pixels to concepts.
-→ notes: `week-2-3/notes/01_building_blocks.md`, `week-2/notes/08_cnn_basics.md`
+**Example:** the course's PyTorch MNIST CNN has two Conv2d layers → pooling and dropout → fully connected layers → digit class. It is trained with negative log-likelihood loss and Adam. Flatten bridges the feature maps to the fully connected layers.
+*Source: W2-KC (CNN Basics; Feature Maps; Pooling; Stride; Padding; Flatten).*
 
 **43. Explain the evolution of CNN architectures from LeNet to VGG, highlighting their key innovations.**
-1. **LeNet-5 (1998, Yann LeCun)**
-   - Small: ~60K parameters, 7 layers, input 32×32 grayscale; conv → pool (subsampling) → conv → pool → fully-connected; tanh/sigmoid activations.
-   - **Innovations:** proved that **learned convolutional features + weight sharing + pooling** beat hand-crafted features, trained end-to-end with backpropagation.
-   - Used for **handwritten digits on bank cheques** (MNIST).
-   - *Limits:* small data and compute, so it couldn't scale to complex images.
-2. **AlexNet (2012, Krizhevsky, Sutskever, Hinton)**
-   - 8 layers (5 conv + 3 fully-connected), ~60M parameters, 224×224 RGB input.
-   - **Won ImageNet 2012**, cutting the top-5 error from ~26% to **15.3%** and starting the deep-learning era.
-   - **Innovations:** **ReLU** (training ~6× faster than tanh), **dropout** in the fully-connected layers (less overfitting), **GPU training** (2 GPUs), **data augmentation** (crops, flips, color jitter), overlapping max pooling, local response normalisation.
-3. **VGG (2014, Oxford Visual Geometry Group)**
-   - 16–19 layers (VGG-16, VGG-19), ~138M parameters.
-   - **Innovation:** **simplicity and depth**: only **3×3 convolutions** (stride 1) and 2×2 max pooling, stacked deep. Two 3×3 convs see 5×5 (three see 7×7) with fewer parameters and more ReLU non-linearities than one large filter.
-   - Uniform design; showed that **depth matters**; 7.3% top-5 error on ImageNet.
-   - *Limits:* very heavy (memory and compute) and hard to train deeper, which ResNet later solved with skip connections.
+1. **LeNet (1998):**
+   - Yann LeCun; digit recognition (**MNIST**).
+   - Architecture: **Convolution → Pooling → Fully Connected**.
+   - **Contribution:** first proof that CNNs outperform traditional ML (like SVMs) for images; adopted in handwriting recognition and banking. *Proof of concept.*
+2. **AlexNet (2012):**
+   - **Won the ImageNet competition by a huge margin**; 5 conv + 3 fully connected layers.
+   - **Innovations:** **ReLU** (faster training), **Dropout** (reduces overfitting), **GPU training** (massive speed-up).
+   - Accuracy went from ~70% before to ~85%+ after. **Sparked the deep learning revolution in vision.** *Breakthrough in scale and performance.*
+3. **VGG (2014, Visual Geometry Group):**
+   - **Very deep (16–19 layers)** with **small 3×3 filters stacked together**.
+   - **Contribution:** showed that **depth improves accuracy**; a standardised design widely used as a research baseline. *Depth and simplicity as design principles.*
 
-**Trend:** deeper networks; ReLU replacing sigmoid; regularisation (dropout, augmentation); GPUs and big data (ImageNet); smaller, stacked filters.
-→ notes: `week-2-3/notes/02_classic_cnns_lenet_alexnet_vgg.md`
+Together they form the timeline of CNN evolution. Later, ResNet and EfficientNet solved the depth and efficiency problems of these deeper networks.
+*Source: W3-KC (CNN Architectures).*
 
 **44. Discuss the importance of ReLU and Dropout in training deep networks.**
-**ReLU, f(x) = max(0, x):**
-- **Fixes vanishing gradients:** sigmoid's slope is at most 0.25 and near 0 when saturated, so gradients shrink layer after layer. ReLU's slope is exactly **1** for positive inputs, so gradients pass through deep stacks.
-- **Faster training:** a simple max operation with no exponentials (AlexNet trained ~6× faster than with tanh).
-- **Sparsity:** negative inputs become exactly 0, so only some neurons fire, which gives efficient, more separable representations.
-- **Caveat: dying ReLU.** Neurons stuck with negative input get zero gradient forever. Fixes: Leaky ReLU, PReLU, a sensible learning rate and He initialisation.
+**ReLU:**
+- **What it does:** keeps positive inputs and outputs zero for negative ones.
+- **Why it matters:** introduces **non-linearity** so networks learn complex patterns; **faster and simpler** than sigmoid or tanh; **helps reduce the vanishing gradient problem**.
+- **Analogy:** a filter that only lets positive signals through.
 
 **Dropout:**
-- During training, each neuron is switched off with probability p (e.g. 0.5); at test time all neurons are active (outputs scaled accordingly).
-- **Prevents co-adaptation:** neurons can't rely on specific partners, so they learn robust, independent features.
-- **Acts like an ensemble** of many thinner sub-networks, averaged at test time.
-- **Reduces overfitting**, the main problem of large networks on limited data (AlexNet's fully-connected layers overfit badly without it).
-- *Costs:* slower convergence; p must be tuned; usually placed in fully-connected layers (BatchNorm reduces the need in conv layers).
+- **What it does:** a **regularisation technique**; it randomly sets a fraction of neurons to zero during training.
+- **Why it matters:** forces the network to **learn robust features instead of memorising**; reduces reliance on specific neurons; **improves generalisation** to unseen data.
+- **Example:** 10 neurons, rate 0.3 → about 3 ignored each pass, so knowledge is distributed across neurons.
+- **Analogy:** a team exercise where some members sit out at random, so everyone learns to contribute.
 
-**Together:** ReLU makes deep networks **trainable**; dropout makes them **generalise**.
-→ notes: `week-2-3/notes/01_building_blocks.md`, `../deep-learning-genai/notes/04_activation_functions.md`, `../deep-learning-genai/notes/05_normalization_and_regularization.md`
+**Importance:** "Together, ReLU and Dropout made CNNs like **AlexNet** train faster and generalise better, which is why they were revolutionary in 2012." The course's MNIST CNN also uses dropout for regularisation.
+*Source: W3-KC (ReLU and Dropout; AlexNet); W2-KC.*
 
 **45. Describe the four core challenges in computer vision (viewpoint, illumination, occlusion, scale) with examples.**
-1. **Viewpoint variation:** the same object looks different from different angles, because its 3-D shape projects to different 2-D pixel patterns. *Example:* a car seen from the front, side and top; a face in profile vs frontal (frontal Haar face detectors miss profiles).
-2. **Illumination changes:** lighting changes pixel values without changing the object: shadows, overexposure, night vs day, colored light. *Example:* face recognition failing under harsh side light; a red traffic light looking orange or washed-out in sunlight; a global threshold failing on a half-shadowed document.
-3. **Occlusion:** part of the object is hidden by another object or the frame edge, so features are missing. *Example:* a pedestrian behind a parked car (critical for self-driving cars); a tracked player hidden behind another; a face covered by a mask.
-4. **Scale variation:** objects appear at very different sizes depending on distance. A detector tuned for one size misses others. *Example:* a nearby car fills the frame while a distant one is a few pixels; small objects in aerial or satellite images.
+⚠ *Your course files do not present these four as a single "core challenges" topic.* Each one appears in different places, as follows.
+1. **Viewpoint:**
+   - Features must be **repeatable**: detectable "even if the image changes (scale, rotation, lighting)". Perspective transformation "warps viewpoint".
+   - *Examples:* **Haar** cascades work for **frontal faces** and are sensitive to **pose**; **Harris** is not invariant to rotation, while **SIFT/ORB** handle rotation.
+2. **Illumination (lighting):**
+   - Global thresholding uses one cutoff for the whole image, so **adaptive thresholding** is "useful for images with varying illumination".
+   - **Optical flow** is sensitive to lighting changes; **Haar** is sensitive to lighting; **HOG** is robust to illumination changes; **SIFT** handles illumination.
+   - *Course question:* RGB vs HSV for detecting traffic lights under varying lighting. HSV separates colour from brightness.
+3. **Occlusion (object hidden):**
+   - A listed challenge in **object tracking**. **KLT** "struggles with occlusion (object hidden)", optical flow is sensitive to occlusions, and Haar is sensitive to occlusion.
+   - *Example:* tracking a moving ball that goes behind something.
+4. **Scale:**
+   - "**Scale changes**" are a tracking challenge. Harris is not scale-invariant, HOG is sensitive to scale changes, ORB is less robust for large scale changes, and **SIFT** is robust to scale.
+   - **SSD** handles scale with multiple feature maps (a small and a large cat in one image).
 
-**Why they're hard:** in all four, the **object stays the same but the pixels change a lot**, so a vision system must be **invariant** to these changes while still telling different objects apart. (Other challenges: intra-class variation, background clutter, deformation, motion blur.)
-Techniques that overcome them: see Q52.
+*Source: W1-KC; W2-KC; D1-3; D4; W3-KC; W1 question bank.*
 
 **46. Describe the analogy of the Generator as a forger and the Discriminator as an inspector.**
-- **The Generator is an art forger.** It starts with a blank idea (random noise z) and tries to paint convincing fake banknotes or paintings. At first its fakes are crude.
-- **The Discriminator is a police inspector / art expert.** It examines items and decides "genuine" (real training image) or "forgery" (generated image).
-- **The contest:** the inspector studies real notes and the forger's fakes and gets better at spotting flaws (training D). The forger learns from **which fakes got caught and why** (the gradient through D) and improves its technique (training G).
-- **Arms race:** as the inspector sharpens, the forger must improve, and vice versa. Each pushes the other.
-- **The ideal ending:** the forgeries become **indistinguishable** from real ones, and the inspector can only guess (50/50, D = 0.5): the Nash equilibrium.
-- **Mapping to code:** forger's idea = `torch.randn(batch, 100)`; forgery = G(z); inspector's verdict = D(x) ∈ [0, 1]; "inspector training" = D's step with labels 1/0; "forger improves" = G's step with target 1 (it wants to be called real).
-- **Limits of the analogy:** the forger never sees real notes directly, only the inspector's reactions; and a forger who finds one trick that always works and repeats it is **mode collapse**.
+**The original GAN paper's analogy (Goodfellow et al., 2014):**
+- The **counterfeiter** prints fake banknotes and tries to spend them without being caught: **the Generator**.
+- The **police** inspect notes and try to detect the fakes: **the Discriminator**.
+- "Competition in this game drives both teams to improve their methods until the counterfeits are indistinguishable from the genuine articles."
 
-→ notes: `week-4-gans/notes/01_gan_basics.md`
+**The course's running example, the flower forger:**
+- **Forger (G):** turns a blank idea (random noise z) into a fake flower. It **never sees a real flower** and learns **only from D's reaction**: the gradient tells each of G's weights "move this way and D's score for your image goes up". D is G's only teacher.
+- **Inspector (D):** looks at an image and gives a verdict P(real). It learns from real flowers what they look like.
+- **Rounds:**
+  - round 1: G draws a random scribble, which D catches easily;
+  - round 2: G learns "colourful blobs", and D starts checking shape;
+  - round 3: G adds petals and a centre, and D checks petal detail;
+  - **round N: G makes convincing flowers, and D can only guess, about 50/50.**
+- **Winners and losers:** if D catches the fake, G must update; if G fools D, D must update. In code both take one gradient step every batch: first D, then G.
+
+| Story | Maths | Code |
+|---|---|---|
+| forger's blank idea | z ~ N(0, I) | `torch.randn(batch_size, 100)` |
+| forger paints | G(z) | `fake = generator(noise)` |
+| inspector's verdict | D(x), D(G(z)) | `discriminator(real)`, `discriminator(fake)` |
+| fakes pass as real | p_g = p_data, D = ½ | loss_d ≈ 1.386, loss_g ≈ 0.693 |
+
+*Source: GAN-1 (slides 13, 14, 15, 19, 24, 43).*
 
 **47. Explain the architecture of the Generator in the notebook (layers, activations, output).**
 ```python
 class Generator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.fc = nn.Sequential(
-            nn.Linear(100, 256),   # noise → hidden
-            nn.ReLU(),
-            nn.Linear(256, 784),   # hidden → 28×28 pixels
-            nn.Tanh())
-    def forward(self, x):
-        return self.fc(x).view(-1, 1, 28, 28)
+  def __init__(self):
+    super().__init__()
+    self.fc = nn.Sequential(
+      nn.Linear(100, 256),
+      nn.ReLU(),
+      nn.Linear(256, 784),
+      nn.Tanh())
+  def forward(self, x):
+    return self.fc(x).view(-1, 1, 28, 28)
 ```
-- **Input:** a noise vector z of **100** values from N(0, 1) (`torch.randn(batch_size, 100)`).
-- **Layer 1:** fully-connected **100 → 256**, then **ReLU** (non-linearity, so the mapping from noise to image can be complex).
-- **Layer 2:** fully-connected **256 → 784** (one value per pixel of a 28 × 28 image).
-- **Output activation: Tanh**, squashing each pixel to **[−1, 1]**, exactly the range of the normalised real MNIST images, so D can't tell fakes by their value range.
-- **Reshape:** 784 values → (batch, 1, 28, 28), a one-channel grayscale image.
-- **Parameters:** 100·256 + 256 + 256·784 + 784 = **227,344**.
-- A simple MLP GAN; DCGAN replaces the linear layers with transposed convolutions + BatchNorm for sharper images.
-- Trained with Adam (lr 0.0002) and BCE loss, using `labels_real` as the target for its fakes.
+- **Input:** a noise vector of **100** random numbers, `torch.randn(batch_size, 100)`.
+- **Layers:** **100 → 256 → 784**: noise vector → hidden layer (with **ReLU**) → one value per pixel.
+- **Output activation:** **Tanh** squashes the outputs to **−1…1**, the same range as the real images after `Normalize((0.5,), (0.5,))`.
+- **Output:** `.view(-1, 1, 28, 28)` reshapes the 784 numbers into a **1-channel 28×28 image**. A full batch has shape (64, 1, 28, 28).
+- A small MLP with **100 inputs and 784 outputs**, trained with Adam (lr = 0.0002) and BCE loss, using `labels_real` as the target for its fakes.
+
+*Source: GAN-1 (slides 10, 25, 49, 52).*
 
 **48. Explain the architecture of the Discriminator in the notebook (layers, activations, output).**
 ```python
 class Discriminator(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.fc = nn.Sequential(
-            nn.Linear(784, 256),
-            nn.LeakyReLU(0.2),
-            nn.Linear(256, 1),
-            nn.Sigmoid())
-    def forward(self, x):
-        return self.fc(x.view(-1, 784))
+  def __init__(self):
+    super().__init__()
+    self.fc = nn.Sequential(
+      nn.Linear(784, 256),
+      nn.LeakyReLU(0.2),
+      nn.Linear(256, 1),
+      nn.Sigmoid())
+  def forward(self, x):
+    return self.fc(x.view(-1, 784))
 ```
-- **Input:** an image (real or fake), 1 × 28 × 28, **flattened to 784** values.
-- **Layer 1:** fully-connected **784 → 256**, then **LeakyReLU(0.2)**. For negative inputs it passes a small slope (0.2 × x) instead of 0. This matters because **G learns only from gradients flowing back through D**: a plain ReLU could block them ("dead" units).
-- **Layer 2:** fully-connected **256 → 1**.
-- **Output activation: Sigmoid**, a single probability in [0, 1] that the image is **real**.
-- **Parameters:** 784·256 + 256 + 256 + 1 = **201,217**.
-- **Mirror of G:** G goes 100 → 256 → 784; D goes 784 → 256 → 1.
-- Trained with **BCELoss**, targets 1 for real and 0 for fake, Adam lr 0.0002. Fakes are `.detach()`ed during D's step so G isn't updated then.
+- **Input:** a 28×28 image, real or fake; `x.view(-1, 784)` **flattens** it.
+- **Layers:** **784 → 256 → 1**.
+- **Hidden activation:** **LeakyReLU(0.2)** lets a small gradient through for negative inputs, **so G keeps getting a signal**.
+- **Output:** **Sigmoid** turns the score into **one probability between 0 and 1**, P(real).
+- **Mirror image of G:** G is 100 → 256 → 784; D is 784 → 256 → 1. A small MLP with 784 inputs and 1 output.
+- Trained with `nn.BCELoss()` and Adam (lr = 0.0002): real → 1, fake → 0.
+
+*Source: GAN-1 (slides 10, 30, 49).*
 
 **49. Compare RGB and HSV color models: advantages, limitations, and use cases in computer vision.**
 
-| | RGB (OpenCV stores BGR) | HSV |
+| | RGB (BGR in OpenCV) | HSV |
 |---|---|---|
-| components | Red, Green, Blue intensities (0–255 each) | **Hue** (color type, 0–179 in OpenCV), **Saturation** (purity), **Value** (brightness) |
-| model | additive mixing of primary lights (how screens and cameras work) | cylindrical; separates color from brightness (closer to human perception) |
-| advantages | native format of cameras, displays and files (no conversion); simple; what CNNs are trained on | **color is separated from lighting**, so detection is robust to shadows/brightness; intuitive ranges ("all reds") |
-| limitations | brightness is mixed into all three channels, so a shadow changes R, G **and** B and color thresholds break under lighting changes; not intuitive | conversion cost; **hue wraps around** (red is at both 0 and 179, so it needs two ranges); hue is unstable for very dark or grey pixels (low S or V) |
-| use cases | display, storage, deep-learning input, general processing | **color-based segmentation and tracking**: skin detection, traffic lights, ripe-fruit sorting, ball tracking, green-screen removal |
+| what it represents | mixes colours using **red, green and blue light** values | **Hue** (type of colour, an angle: 0° red, 120° green, 240° blue), **Saturation** (purity, 0% grey → 100% vivid), **Value** (brightness, 0% black → 100% brightest) |
+| advantages | **great for screens**; the default image format (OpenCV loads BGR) | **closer to how humans perceive colour**; separates colour into intuitive parts (colour family, how colourful, how bright) |
+| limitations | **not intuitive for humans**; brightness isn't separated from colour | ⚠ *your course files list no limitations for HSV* |
+| use cases | storing and displaying images (convert BGR→RGB for Matplotlib) | **colour detection, segmentation, image editing**: e.g. detecting **ripe fruit** by isolating the hue range for yellow or red "without worrying about brightness changes" |
 
-**Rule of thumb:** use RGB for storage, display and CNN input; convert to HSV (`cv2.cvtColor(img, cv2.COLOR_BGR2HSV)`) when you need to **find objects by color** under varying light, using `cv2.inRange` on H, with minimum S and V to ignore greys and shadows.
-→ notes: `week-1/notes/day1_images_and_colors.md`
+Conversion: `hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)`. "Converting between colour spaces helps in tasks like colour detection." The Week 1 question bank applies this to **traffic-light detection under varying lighting** and **ripe-fruit detection**, where HSV's separation of brightness is the advantage.
+*Source: W1-KC (HSV; Why HSV is Useful); D1-3.*
 
 **50. Compare Haar cascades and HOG for face detection: methodology, strengths, weaknesses, and applications.**
-**Haar cascades (Viola–Jones, 2001):**
-- **Method:**
-  - **Haar-like features**: differences of pixel sums in adjacent black/white rectangles (e.g. the eye region is darker than the cheeks), computed instantly with an **integral image**;
-  - **AdaBoost** selects the few most useful features out of ~160,000;
-  - a **cascade** of increasingly complex stages rejects non-face windows early;
-  - the window slides over an image pyramid.
-- **Strengths:** **very fast** (real-time on old CPUs); cheap; built into OpenCV (`cv2.CascadeClassifier`).
-- **Weaknesses:** works mainly on **frontal, upright faces**; sensitive to lighting, rotation and occlusion; many false positives; needs `scaleFactor`/`minNeighbors` tuning.
-- **Applications:** camera autofocus and face boxes, early webcam apps, simple real-time detection on low-power devices.
+**Face detection** = locating human faces in images or video. It is a fundamental step before face recognition, emotion analysis or biometrics.
 
-**HOG (Histogram of Oriented Gradients, Dalal & Triggs, 2005) + linear SVM:**
-- **Method:** compute gradients → split the window into cells (e.g. 8×8) → build a **histogram of gradient orientations** (9 bins) per cell → normalise over blocks (robust to lighting) → concatenate into a feature vector → classify with a **linear SVM** in a sliding window over an image pyramid (dlib's face detector uses HOG).
-- **Strengths:** captures **shape/edge structure** robustly; more accurate than Haar with fewer false positives; robust to illumination and small deformations.
-- **Weaknesses:** slower than Haar; still struggles with large pose changes, occlusion and very small faces; fixed window aspect ratio.
-- **Applications:** pedestrian detection (its original use), face detection (dlib), vehicle detection, people counting.
+| | Haar cascades | HOG (Histogram of Oriented Gradients) |
+|---|---|---|
+| methodology | **Haar features = simple rectangular patterns** (like edge detectors); **AdaBoost** selects the most important features and combines them into a **cascade classifier**; run with `detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)` | captures **gradient-orientation distributions in local regions**: compute gradients → divide the image into **cells (e.g. 8×8)** → build orientation histograms → **normalise over blocks** |
+| strengths | **fast and lightweight**; works well for **frontal faces in controlled environments**; real-time on a webcam | **robust to illumination changes**; captures **shape and edge information** effectively; lightweight and interpretable |
+| weaknesses | **sensitive to lighting, pose and occlusion**; less robust in complex scenes; false positives and missed detections (tune `scaleFactor`, `minNeighbors`) | **computationally heavier** than Haar; may need more preprocessing; sensitive to scale changes |
+| applications | face detector app (images/webcam), security systems, attendance monitoring, AR filters, face unlock | classical **face and pedestrian detection**, object classification |
 
-**Summary:** Haar = speed; HOG = accuracy and robustness. Both are now largely replaced by CNN detectors (MTCNN, RetinaFace, YOLO), which handle pose and occlusion far better.
-→ notes: `week-2/notes/06_face_detection_haar_hog.md`
+**In short (course tip):** Haar = **fast, lightweight**; HOG = **robust, heavier**.
+*Source: W2-KC (Face Detection); W2-Lab 6; W1-KC (HoG).*
 
 **51. Compare R-CNN, YOLO, and SSD architectures: processes, strengths, weaknesses, and ideal applications.**
-**R-CNN family (two-stage):**
-- **Process:**
-  1. **Selective search** proposes ~2,000 candidate regions;
-  2. each region is warped and passed through a CNN for features;
-  3. SVMs classify each region, and regression refines the box.
-- **Fast R-CNN** runs the CNN once per image and uses RoI pooling. **Faster R-CNN** replaces selective search with a learned **Region Proposal Network (RPN)**.
-- **Strengths:** **high accuracy and precise localization**, good on small objects (Faster R-CNN).
-- **Weaknesses:** **slow** (original R-CNN ~47 s per image; Faster R-CNN ~5–7 fps); complex multi-stage training.
-- **Ideal for:** accuracy-critical, offline tasks: medical imaging, satellite analysis, detailed inspection (Mask R-CNN adds segmentation masks).
+*Object detection* = identifying **what** an object is and **where** it is.
 
-**YOLO, "You Only Look Once" (one-stage):**
-- **Process:** divide the image into an **S×S grid**; in **one forward pass**, each cell predicts bounding boxes, confidence scores and class probabilities; then non-maximum suppression.
-- **Strengths:** **real-time** (45+ fps); sees the whole image, so fewer background false positives; simple end-to-end training.
-- **Weaknesses:** less precise localization; struggles with **small or crowded objects** (limited boxes per cell in early versions).
-- **Ideal for:** real-time video: autonomous driving, surveillance, robotics, drones, sports tracking.
-
-**SSD, Single Shot MultiBox Detector (one-stage):**
-- **Process:** a single pass; default (anchor) boxes of several sizes and aspect ratios; predictions made from **multiple feature maps at different scales** (early high-resolution maps → small objects, deep maps → large objects).
-- **Strengths:** a good **balance of speed and accuracy** (~59 fps at 300×300); handles **multiple scales** better than early YOLO.
-- **Weaknesses:** still weaker than two-stage detectors on very small objects; sensitive to anchor design.
-- **Ideal for:** mobile and embedded devices (with MobileNet backbones), real-time apps that need decent multi-scale accuracy.
-
-| | R-CNN (Faster) | YOLO | SSD |
+| | R-CNN (2014) | YOLO (2016) | SSD (2016) |
 |---|---|---|---|
-| stages | two | one | one |
-| speed | slow | fastest | fast |
-| accuracy | highest | good | good |
-| small objects | best | weakest | medium |
+| full name | Region-based Convolutional Neural Network | You Only Look Once | Single Shot MultiBox Detector |
+| process | 1. generate **region proposals**; 2. **run a CNN on each region**; 3. classify and refine bounding boxes | **detection as a single regression problem**: boxes + class probabilities in **one forward pass** | uses **multiple feature maps at different scales**; detects small and large objects simultaneously |
+| strengths | **high accuracy** | **real-time** (fast) | **faster than R-CNN, competitive accuracy**; handles multiple scales |
+| weaknesses | **very slow**: thousands of regions per image | less accurate for **small objects** | slightly less accurate than R-CNN for very complex scenes |
+| contribution | first major CNN-based detector | made detection practical in real time | **balanced speed and accuracy** |
+| ideal for | **medical imaging** (tumours in MRI: accuracy > speed, offline) | **autonomous driving** (a pedestrian crossing: speed > accuracy) | **mobile vision tasks**; driving (multiple scales) |
+| examples | a dog image → many proposed regions, each classified | many objects in a street scene in one shot | a small cat and a large cat in the same image |
 
-→ notes: `week-2-3/notes/04_object_detection_rcnn_yolo_ssd.md`
+**Key insight:** the trade-off between accuracy and speed. Medical imaging → R-CNN (and successors like Faster R-CNN); autonomous driving → YOLO/SSD.
+*Source: W3-KC (Object Detection Architectures).*
 
 **52. Explain techniques used to overcome these challenges: data augmentation, histogram equalization, robust feature detection, and multi-scale feature extraction.**
-1. **Data augmentation** (for viewpoint, illumination, occlusion and scale): artificially vary the training images so the model learns invariance.
-   - *Viewpoint:* rotations, flips, perspective/affine warps.
-   - *Illumination:* brightness, contrast and color jitter.
-   - *Occlusion:* random erasing / cutout (blank out patches).
-   - *Scale:* random resized crops and zoom.
-   - The model sees many variations of each object without new labels, so it generalises better (AlexNet's crops and flips cut overfitting).
-2. **Histogram equalization** (for illumination): spreads intensities over the full range using the CDF, normalising contrast between dark and bright images. **CLAHE** handles uneven lighting locally. Use it before thresholding, feature detection or face recognition. HSV/normalised color spaces help similarly.
-3. **Robust feature detection** (for viewpoint, scale, occlusion): use features designed to be invariant.
-   - **SIFT:** scale-space extrema + dominant orientation, so it's scale- and rotation-invariant.
-   - **ORB:** fast, rotation-aware.
-   - **HOG:** block-normalised against lighting.
-   - Because many **local** features are matched (with ratio test + RANSAC), recognition still works when part of the object is **occluded**: enough visible keypoints remain.
-4. **Multi-scale feature extraction** (for scale): image pyramids; SSD-style predictions from several feature maps; **Feature Pyramid Networks** combining deep semantic and shallow high-resolution features; anchor boxes of many sizes; Inception's parallel filter sizes. Small and large objects are both detected.
+⚠ *Your course files do not present these four as one set of "challenge-overcoming techniques". This is what they say about each:*
+1. **Data augmentation:**
+   - The Day 2 mini-project is an **Image Augmentation Tool** that applies **translate, scale, rotate and perspective** transformations to an image.
+   - GAN Class 1 lists data augmentation as a GAN use: "extra synthetic training images when real ones are rare or private".
+   - ⚠ *The course does not discuss augmentation as a training technique beyond this.*
+2. **Histogram equalization:**
+   - Named as an enhancement technique based on histograms, which reveal under- or over-exposure.
+   - ⚠ *No mechanism is given.* For uneven illumination the course uses **adaptive thresholding** ("useful for images with varying illumination").
+3. **Robust feature detection:**
+   - Features should be **repeatable** "even if the image changes (scale, rotation, lighting)".
+   - **SIFT** is robust to scale, rotation and illumination (Gaussian scale space, DoG extrema, orientation, 128-D descriptor).
+   - **ORB** is fast and rotation invariant; **HOG** is robust to illumination.
+   - Matching with **FLANN + Lowe's ratio test** and **RANSAC** (robust to outlier matches).
+4. **Multi-scale feature extraction:**
+   - **SSD's multiple feature maps** detect small and large objects together.
+   - SIFT's **scale space**; Haar's `detectMultiScale`.
+   - CNN layers go from edges (early) to objects (deep).
 
-Also: deep CNNs and ViTs trained on large, diverse datasets learn invariance automatically, and attention/context helps reason about occluded parts.
-→ notes: `week-1/notes/day4_histograms_and_thresholding.md`, `week-2/notes/01_feature_detection_harris_sift_orb.md`, `week-2-3/notes/04_object_detection_rcnn_yolo_ssd.md`
+*Source: D1-3; GAN-1; W1-KC; D4; W2-KC; W3-KC; W2-Lab 2, 6.*
 
 **53. Discuss the training loop in detail: how labels_real and labels_fake are used, and how gradients flow in each step.**
 ```python
-for real, _ in loader:
-    batch_size = real.size(0)
-    labels_real = torch.ones(batch_size, 1)    # target 1 = "real"
-    labels_fake = torch.zeros(batch_size, 1)   # target 0 = "fake"
-
-    # ---- Step 1: train D ----
-    outputs_real = D(real)
-    loss_real = criterion(outputs_real, labels_real)          # real images should score 1
+for epoch in range(epochs):                  # epochs = 2
+  for real, _ in train_loader:
+    batch_size = real.size(0)                # last MNIST batch has only 32 images
+    labels_real = torch.ones(batch_size, 1)
+    labels_fake = torch.zeros(batch_size, 1)
+    # Train Discriminator
+    optimizer_d.zero_grad()
+    outputs_real = discriminator(real)
+    loss_real = criterion(outputs_real, labels_real)
     noise = torch.randn(batch_size, 100)
-    fake = G(noise)
-    outputs_fake = D(fake.detach())                            # detach: stop gradients into G
-    loss_fake = criterion(outputs_fake, labels_fake)           # fakes should score 0
+    fake = generator(noise)
+    outputs_fake = discriminator(fake.detach())
+    loss_fake = criterion(outputs_fake, labels_fake)
     loss_d = loss_real + loss_fake
-    optimizer_D.zero_grad(); loss_d.backward(); optimizer_D.step()
-
-    # ---- Step 2: train G ----
-    outputs_fake = D(fake)                                     # no detach this time
-    loss_g = criterion(outputs_fake, labels_real)              # G wants fakes called REAL
-    optimizer_G.zero_grad(); loss_g.backward(); optimizer_G.step()
+    loss_d.backward(); optimizer_d.step()
+    # Train Generator
+    optimizer_g.zero_grad()
+    outputs_fake = discriminator(fake)
+    loss_g = criterion(outputs_fake, labels_real)
+    loss_g.backward(); optimizer_g.step()
 ```
-**Labels (BCE loss):**
-- `labels_real` = all ones, `labels_fake` = all zeros, created per batch with `batch_size = real.size(0)` (the last MNIST batch is smaller: 60,000 = 937 × 64 + 32).
-- **In D's step:** real images get target **1** and fakes target **0**: the truth about where each image came from. BCE = −log D(x) for reals and −log(1 − D(G(z))) for fakes.
-- **In G's step:** fakes get target **1** (`labels_real`). This isn't cheating: it expresses **G's goal** (to be judged real). The loss −log D(G(z)) is the **non-saturating** generator loss (Q57).
+**The labels (BCE: −[y·log p + (1 − y)·log(1 − p)]):**
+- D's labels **come for free**: an image picked from the dataset gets **label 1** (`labels_real = torch.ones`), and one painted by G gets **label 0** (`labels_fake = torch.zeros`). The label means "**which pile did this come from**", not "is it pretty": a beautiful fake is still 0 when training D.
+- In **G's step**, the fakes get **`labels_real` (1)**. "Not cheating": the label here states **what G wants D to say**. "Loss is low when D is fooled." This is the **non-saturating loss**.
 
 **Gradient flow:**
-- **Step 1:** `fake.detach()` cuts the graph, so `loss_d.backward()` computes gradients **only for D's weights**, and `optimizer_D.step()` updates only D. Without detach, gradients would flow into G (wasted computation, and G would wrongly learn to help D).
-- **Step 2:** `loss_g.backward()` sends gradients **backwards through D and then into G**. D's weights receive gradients too, but they are **not updated**, because only `optimizer_G.step()` is called, and `optimizer_D.zero_grad()` clears them on the next batch. D acts as a fixed **differentiable critic** telling G how to change its pixels to look more real.
-- **zero_grad()** before each backward call prevents gradients from accumulating across steps.
+- **D step:** `fake.detach()` **cuts the wire back to G**, and only `optimizer_d` steps, so the step changes **D's weights only**.
+- **G step:** the same fakes **without detach**, so the gradients **flow backwards through D into G**. D's weights are not updated here (only `optimizer_g` steps), so D acts as a **fixed judge**.
 
-**Settings:** Adam, lr = 0.0002 for both (β₁ = 0.5 is recommended; the default 0.9 caused mode collapse in our run); batch 64; two optimizers, one per network.
-**Monitoring:** if D outputs 0.5 everywhere, loss_D ≈ 2 ln 2 ≈ 1.386 and loss_G ≈ ln 2 ≈ 0.693. But losses don't show image quality; watch a fixed-noise grid.
-→ notes: `week-4-gans/notes/01_gan_basics.md`, `week-4-gans/notes/02_gan_training_dynamics.md`
+**Setup:** `criterion = nn.BCELoss()`; two Adam optimizers with lr = 0.0002 (each only updates its own network); batch 64 (~938 batches per epoch). The printed losses are from the **last batch** of each epoch.
+**Worked BCE numbers:** D on a real image at 0.9 → 0.105, plus a fake at 0.2 → 0.223, total 0.328 (D doing well). G's loss on the same fake = −log 0.2 = 1.609 (G must improve).
+*Source: GAN-1 (slides 28, 34–37, 49, 50, 52).*
 
 **54. Elaborate on contour analysis and object tracking: algorithms, challenges (occlusion, scale, clutter), and real-world applications.**
 **Contour analysis:**
-- A **contour** is a curve joining continuous boundary points of the same intensity: an object's outline in a binary image.
-- **Pipeline:** grayscale → blur → threshold/Canny → morphology → `cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)`.
-- **Measurements:**
-  - area (`contourArea`), perimeter (`arcLength`);
-  - centroid from **moments** (cx = M10/M00, cy = M01/M00);
-  - bounding box (`boundingRect`, `minAreaRect`), enclosing circle;
-  - **convex hull** and solidity (area / hull area), aspect ratio, circularity (4π·area/perimeter²);
-  - shape matching (`matchShapes` with Hu moments).
-- **Shape classification:** `approxPolyDP` (Douglas–Peucker) simplifies a contour to its corners: 3 vertices = triangle, 4 = rectangle or square (check the aspect ratio), many = circle.
+- **Contours** are curves joining continuous points along the boundary of objects with the same intensity or colour. Contour analysis extracts and studies these boundaries, for **shape recognition, object detection and classification**. Key descriptors: **area, perimeter, centroid, bounding boxes, convex hulls**.
+- **Algorithm (Day 6):**
+  1. threshold to binary (`cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)`), or Canny edges (Day 3);
+  2. `cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)`;
+  3. draw contours;
+  4. **bounding box** (the smallest rectangle enclosing a contour, for localisation): `cv2.boundingRect`;
+  5. **convex hull** (the smallest convex polygon enclosing a contour, for shape simplification): `cv2.convexHull`;
+  6. **shape classification**: `cv2.approxPolyDP(cnt, 0.02*cv2.arcLength(cnt, True), True)`, then count vertices: 3 = triangle, 4 = rectangle, more than 6 = circle, otherwise polygon.
 
-**Object tracking: following an object across video frames.**
-- **Centroid / contour tracking:** detect objects each frame (e.g. by background subtraction + contours) and link them by the nearest centroid.
-- **Mean-Shift / CamShift:** track a color histogram (HSV hue) by moving the window to the peak of the back-projection. CamShift also adapts window size and orientation.
-- **Optical flow:** **Lucas–Kanade / KLT** tracks sparse keypoints (Shi–Tomasi corners) assuming constant brightness and small motion, using pyramids for larger motion. **Farneback** gives dense flow for every pixel.
-- **Kalman filter:** predicts the next position from a motion model and corrects it with measurements. It bridges gaps during occlusion.
-- **OpenCV trackers:** MOSSE (very fast), KCF, CSRT (accurate).
-- **Deep trackers:** SORT / DeepSORT (detector + Kalman + appearance features for multiple objects), Siamese networks.
+**Object tracking:**
+- **Definition:** continuously locating (following) a moving target across consecutive video frames.
+- **Approaches:**
+  - detection-based (detect in each frame with YOLO / Faster R-CNN and link the detections);
+  - tracking-by-motion (optical flow or correlation filters);
+  - hybrid (SORT, DeepSORT).
+- **Optical flow:** estimates pixel motion between frames, assuming a pixel's brightness stays constant. **Dense** = every pixel (Farneback; motion visualised with HSV colour coding); **sparse** = selected keypoints. Methods: Lucas–Kanade (local), Horn–Schunck (global smoothness).
+- **KLT tracker:**
+  1. detect "good features to track" (corners): `cv2.goodFeaturesToTrack`;
+  2. follow them with Lucas–Kanade: `cv2.calcOpticalFlowPyrLK`.
+  Tune `maxCorners` and `winSize`.
+- **Kalman filter:** predict the next position from a motion model, then correct it with the measurement. It handles noisy data and smooths trajectories; best for linear motion with Gaussian noise.
 
 **Challenges:**
-- **Occlusion:** the object is partly or fully hidden, so contours break or merge and trackers lose the target or swap identities. *Mitigation:* Kalman prediction, re-identification by appearance, multiple cues.
-- **Scale change:** the object moves towards or away from the camera, so fixed-size windows fail. *Mitigation:* CamShift, pyramidal optical flow, scale-adaptive trackers (CSRT), multi-scale detection.
-- **Background clutter:** similar colors or textures nearby confuse color-histogram and contour methods (false contours). *Mitigation:* better segmentation, motion cues, combined features, deep appearance models.
-- Also: illumination changes (they break the brightness-constancy assumption), fast motion and blur, deformation, and objects entering or leaving the frame.
+- **occlusion:** KLT struggles when the object is hidden; optical flow is sensitive to occlusions;
+- **scale changes**;
+- **cluttered backgrounds** and **multiple objects**;
+- large motion jumps; lighting changes;
+- objects changing appearance;
+- KLT needs re-initialisation when features are lost.
 
-**Applications:** traffic monitoring and vehicle counting; surveillance and people counting; sports analytics (ball and player tracking); industrial inspection and object counting on conveyors; gesture and hand tracking (HCI); medical (cell tracking, measuring tumour area); robotics and drones; AR (tracking markers); document scanning (finding the page's four corners).
-→ notes: `week-1/notes/day6_contours_and_shapes.md`, `week-2/notes/03_object_tracking_optical_flow_klt.md`
+**Applications:**
+- contours: object detection and tracking, industrial inspection, medical imaging (cell shape analysis), shape detector;
+- tracking: surveillance and CCTV, sports analytics and replay analysis, autonomous driving and driver assistance, human–computer interaction, traffic flow visualisation, unusual-movement detection.
+
+*Source: W1-KC (Contours; Object Tracking; Optical Flow; Kalman Filters); D6; W2-KC (Object Tracking Basics); W2-Lab 3.*
 
 **55. Elaborate on the Bag of Visual Words pipeline: feature extraction, clustering, histogram representation, and classification.**
-**Idea:** borrowed from text classification (Bag of Words). Represent an image by **how often each "visual word" (a typical local patch pattern) appears**, ignoring where it appears.
+**Idea:** inspired by text analysis, where documents are represented as **word-frequency histograms**. In CV, local image features are clustered into **"visual words"**. BoVW **converts variable-length feature sets into fixed-length histograms**, so standard ML algorithms can classify them. Analogy: words ↔ visual words, document ↔ image, word frequency ↔ histogram.
+1. **Feature extraction:** extract **local features** from the images (e.g. **SIFT** or ORB descriptors).
+2. **Feature clustering:** use clustering (commonly **k-means**) to group the descriptors; **each cluster centre is a visual word**. Like grouping synonyms in language, it groups similar visual patterns. Lab: `KMeans(n_clusters=k, random_state=42)`.
+3. **Histogram representation:** **assign each feature to its nearest cluster (visual word)** → **count the occurrences** of each word → the histogram becomes the image's representation. **Benefit:** a **fixed-length vector** regardless of how many features were extracted.
+4. **Classification:** feed the histograms to classifiers like **SVM or kNN**. Mini-project **Texture Classifier**: an SVM trained on BoVW histograms.
 
-1. **Feature extraction:** detect keypoints and compute local **descriptors** for every training image: SIFT (128-D), ORB (binary) or dense SIFT on a grid. Each image yields hundreds or thousands of descriptors, a different number per image.
-2. **Clustering, building the visual vocabulary:** pool the descriptors from **training images only** and run **k-means** with k clusters (e.g. 100–1,000). Each cluster centre is a **visual word**: a prototype local pattern, such as a corner type or a texture patch. Like grouping synonyms ("big", "large", "huge" → one word), similar-looking patches map to one word.
-3. **Histogram representation, encoding:** for each image, assign every descriptor to its **nearest cluster centre** and count how many times each word occurs, giving a **fixed-length histogram of k bins** whatever the number of keypoints. Normalise it (L1/L2, optionally TF-IDF weighting).
-4. **Classification:** train a classifier on the histograms with labels: **SVM** (often with a χ² or histogram-intersection kernel), kNN, or Naive Bayes. To classify a new image: extract descriptors → map them to words with the same vocabulary → build its histogram → classifier → label.
-
-**Choosing k:** too small and different patterns merge (less discriminative); too large and the histograms become sparse and noisy (slower, overfitting). Choose it by validation.
-**Strengths:** fixed-length vectors from variable feature sets; robust to occlusion and viewpoint (local features); simple; works well for **textures and scenes**.
-**Weaknesses:** **loses spatial layout** (fixed by **spatial pyramid matching**); quantization error; the vocabulary depends on the training data; replaced by CNN features in modern systems.
-**Applications:** texture and material classification, scene recognition, image retrieval (search by similar images), object categorisation, early robot place recognition (loop closure).
-→ notes: `week-2/notes/05_bag_of_visual_words.md`
+**Number of clusters k:** it sets the vocabulary size and affects classification accuracy.
+**Applications:** texture classification, scene recognition, object categorisation, material recognition, surface inspection, texture-based retrieval, fabrics in fashion, natural textures in environmental monitoring.
+*Source: W2-KC (Bag of Visual Words); W2-Lab 5.*
 
 **56. Elaborate on how modern architectures (ResNet, EfficientNet, ViT) solved depth and efficiency challenges, and analyze their impact on real-world vision tasks.**
-**The problems after VGG:**
-- **Depth:** deeper plain networks suffered vanishing gradients and the **degradation problem** (a 56-layer plain net had *higher training* error than a 20-layer one).
-- **Efficiency:** VGG-16 had 138M parameters and ~15 GFLOPs, too heavy for mobile devices.
-- **Locality:** CNNs see only local neighbourhoods per layer, so global context builds up slowly.
+**The problem:** LeNet, AlexNet and VGG showed the power of CNNs, but **deeper networks faced vanishing gradients and computational inefficiency**. Modern architectures addressed **depth, efficiency and scalability**.
+1. **ResNet (2015): depth.**
+   - Very deep networks had **vanishing gradients** (weights stopped updating).
+   - **Residual (skip) connections**: the network **learns residuals instead of direct mappings**, and gradients flow more easily.
+   - Networks of **50, 101 and 152 layers** became trainable; state-of-the-art on ImageNet.
+   - **Impact:** medical imaging.
+2. **EfficientNet (2019): efficiency.**
+   - Scaling deeper, wider or to higher resolution was inefficient and unbalanced.
+   - **Compound scaling**: depth, width and resolution scaled systematically with a single formula.
+   - High accuracy with **fewer parameters**: it outperforms larger CNNs while being lightweight.
+   - **Impact:** **mobile vision apps**.
+3. **Vision Transformer (ViT): global context.**
+   - CNNs struggle with **long-range dependencies**.
+   - ViT splits the image into **16×16 patches** treated as tokens; a **transformer encoder with attention** learns relationships across patches; a classification token summarises the image.
+   - **Benefits:** captures global context better than CNNs; **scales well with large datasets**; flexible (classification, detection, segmentation); inspired hybrid CNN + Transformer models.
+   - **Impact:** image classification (ImageNet), medical imaging (global patterns), video understanding, multimodal (vision + language). It **shifted computer vision from CNN-centric to transformer-centric approaches**.
 
-**1. ResNet (2015, He et al.): depth.**
-- **Residual blocks** y = F(x) + x: layers learn only the residual, and identity mappings are easy, so extra layers can't hurt.
-- The gradient flows through the identity shortcut unchanged, so **very deep networks train** (ResNet-50/101/152, even 1,000+ layers).
-- **Bottleneck blocks** (1×1 → 3×3 → 1×1) keep compute manageable; BatchNorm throughout.
-- ImageNet top-5 error **3.57%**, below the human estimate (~5%); won ILSVRC 2015.
-- **Impact:** the default **backbone** for detection (Faster/Mask R-CNN), segmentation and transfer learning; medical diagnosis (X-ray and CT classification); face recognition. Skip connections were adopted everywhere (U-Net, DenseNet, Transformers).
-
-**2. EfficientNet (2019, Tan & Le): efficiency.**
-- Earlier networks scaled **one** dimension arbitrarily. **Compound scaling** grows depth (α^φ), width (β^φ) and resolution (γ^φ) together, under the constraint α·β²·γ² ≈ 2, so each step doubles the compute in a balanced way.
-- Base network found by **neural architecture search**, built from mobile inverted bottleneck (MBConv) blocks with squeeze-and-excitation.
-- **EfficientNet-B7** matched the best accuracy (84.3% top-1) with **8.4× fewer parameters** and **6.1× faster** inference than the previous best; B0 is tiny (5.3M parameters).
-- **Impact:** state-of-the-art accuracy on **phones, edge and embedded devices** (on-device photo classification, agriculture/plant-disease apps, medical screening in clinics); cheaper cloud inference; a backbone for EfficientDet.
-
-**3. Vision Transformer, ViT (2020, Dosovitskiy et al.): global context.**
-- An image becomes a **sequence of 16×16 patch tokens** + position embeddings, processed by Transformer encoder layers with **self-attention**: every patch attends to every other patch from the **first layer**, giving **global context** and long-range relationships.
-- Fewer built-in assumptions (inductive biases) than CNNs, so it needs **large datasets** (JFT-300M) or pre-training. At scale it matches or beats CNNs, and it **scales well** with data and compute.
-- **Impact:** a unified architecture for vision and language, enabling **multimodal models** (CLIP, image captioning, text-to-image); DETR (Transformer-based detection without anchors or NMS) and Segment Anything; hybrid and efficient variants (Swin Transformer, DeiT).
-
-**Analysis:**
-- ResNet made **depth** usable, EfficientNet made accuracy **affordable**, and ViT made **global reasoning** natural.
-- Together they moved vision from hand-tuned architectures to **scalable, transferable backbones**.
-- Pre-trained models (ImageNet, CLIP) are fine-tuned for real tasks with little data: medical imaging, autonomous driving (perception stacks with ResNet/EfficientNet backbones and Transformer detectors), retail, satellite imagery, quality inspection.
-- **Trade-offs remain:** ViTs are data- and compute-hungry; CNNs remain strong on small datasets and edge devices; hybrids combine both.
-
-→ notes: `week-2-3/notes/03_modern_cnns_resnet_efficientnet.md`, `week-2-3/notes/07_attention_and_vision_transformers.md`
+**Analysis:** ResNet made very deep networks trainable, and EfficientNet made scaling efficient and practical. Together they represent the modern era of CNNs, and their ideas influenced later models and even ViT. ViT then added global context.
+*Source: W3-KC (Why Study Modern CNNs?; Vision Transformers & Attention).*
 
 **57. Analyze the mathematical foundation of GANs: minimax game, optimal Discriminator, Nash equilibrium, and why the non-saturating generator loss is used.**
-**1. The minimax game:**
+**1. Minimax game:**
 
-**min_G max_D V(D, G) = E_{x~p_data}[log D(x)] + E_{z~p_z}[log(1 − D(G(z)))]**
+**min_G max_D  V(D, G) = E_x[ log D(x) ] + E_z[ log(1 − D(G(z))) ]**
 
-D maximises V (classifies correctly); G minimises V (fools D). Writing p_g for the distribution of G's outputs:
+- D **pushes V up**: it says "real" to real data (D(x) → 1) and pushes D(G(z)) → 0.
+- G **pushes V down**: it pushes D(G(z)) → 1, and can only affect the second term.
+- **Zero-sum game:** the payoffs always add to zero (D gets V, G gets −V), so D's gain is G's loss. Minimax = "G minimises what the best D can maximise".
+- **Generative goal:** move the generator's distribution **p_g** until it sits on top of the data distribution **p_data**.
 
-V = ∫ [ p_data(x) log D(x) + p_g(x) log(1 − D(x)) ] dx
-
-**2. The optimal Discriminator (for a fixed G):** maximise the integrand point by point. For a·log y + b·log(1 − y), the maximum is at y = a/(a + b). So
+**2. Optimal Discriminator (for a fixed G):**
 
 **D\*(x) = p_data(x) / (p_data(x) + p_g(x))**
 
-Where real data is much more likely than fakes, D\* → 1; where they are equally likely, D\* = ½.
+i.e. "how much of the probability at x comes from real data?"
 
-**3. What G minimises:** substituting D\* gives
+**3. Nash equilibrium:**
+- **Definition:** a choice for every player such that **no player can do better by changing only their own choice**. "No regrets" test: knowing what the others did, would you change your move?
+- **GAN's equilibrium:** against D\*, G does best when **p_g = p_data**. Then **D\*(x) = ½ everywhere** and **V = −log 4 ≈ −1.386**. D can do no better than a coin flip, so neither player can improve alone.
+- Notebook reference values: loss_d = 2 ln 2 ≈ 1.386, loss_g = ln 2 ≈ 0.693.
+- **In practice:** "the theory guarantees it exists, not that gradient training will reach it". In the x·y game, gradient play **circles** the equilibrium: simultaneous updates spiral outward, alternating updates orbit for ever. A smaller lr only slows the circling. A GAN searches for a **saddle point**, not a valley.
 
-V(D\*, G) = −log 4 + 2·**JSD(p_data ‖ p_g)**
+**4. Why the non-saturating generator loss:**
+- **Early in training** fakes are bad, so **D(G(z)) ≈ 0**.
+- The original term **log(1 − D(G(z))) is almost flat there → tiny gradient → G barely learns**.
+- The notebook's term **−log D(G(z)) is steep there → a strong gradient exactly when G needs it**.
+- Same goal (D(G(z)) → 1). In code: **`criterion(outputs_fake, labels_real)`**. (Also suggested in Goodfellow et al. 2014, Section 3.)
+- It softens the "D too strong" vanishing-gradient problem, but "a D that is far ahead can still stall G".
 
-where JSD is the Jensen–Shannon divergence (≥ 0, and 0 only if the two distributions are identical). So, with an optimal D, training G **minimises the JS divergence** between the real and generated distributions. The global minimum is **p_g = p_data**, with V = −log 4 and D\*(x) = ½ everywhere.
-
-**4. Nash equilibrium:** a point where **neither player can improve by changing only its own strategy**. For GANs that's (G with p_g = p_data, D = ½): G can't get any closer to the data, and D can do no better than guessing.
-In practice:
-- training uses **alternating gradient steps** on a non-convex game, so it may **oscillate around** the equilibrium instead of converging;
-- networks have limited capacity and D is never optimal;
-- hence instability and mode collapse (Q38).
-That's why "D ≈ 0.5" alone isn't proof of success: also check sample quality and diversity.
-
-**5. Why the non-saturating generator loss?**
-- The original G loss is **minimise log(1 − D(G(z)))**. Early in training G is poor, and D easily rejects fakes: D(G(z)) ≈ 0.
-- There, log(1 − D) is **flat**. With D = σ(a) (a = D's logit), the gradient of log(1 − σ(a)) with respect to a is −σ(a) ≈ 0. **G gets almost no gradient exactly when it most needs to learn** (saturation).
-- **Non-saturating loss:** instead **maximise log D(G(z))**, i.e. minimise **−log D(G(z))**. Its gradient with respect to a is −(1 − σ(a)) ≈ −1 when D(G(z)) ≈ 0, so G gets a **strong gradient** when it's doing badly.
-- Both losses share the same fixed point (they push D(G(z)) towards 1), but the non-saturating one gives much better learning dynamics.
-- **In code** it's exactly `criterion(D(fake), labels_real)`: BCE with target 1 = −log D(G(z)). That's why the notebook uses `labels_real` for G's step.
-- It's still not a perfect fix: when D is extremely strong, gradients can become unstable. This motivated **WGAN** (Wasserstein distance, smooth gradients everywhere), label smoothing and spectral normalisation.
-
-**Summary:** the minimax game → the optimal D is a density ratio → G minimises the JS divergence → the equilibrium is p_g = p_data, D = ½ → in practice alternating SGD only approximates it → the non-saturating loss fixes G's vanishing gradients early in training.
-→ notes: `week-4-gans/notes/01_gan_basics.md`, `week-4-gans/notes/02_gan_training_dynamics.md`
+*Source: GAN-1 (slides 9, 38, 39, 40); GAN-2-3 (sections 01–03).*
